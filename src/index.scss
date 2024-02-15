@@ -1,0 +1,19 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', ans-serif;
+}
+
+#root {
+  text-align: center;
+  padding-top: 50px;
+  //display: flex;
+  //flex-direction: columns;
+}
+
+svg {
+  border: solid 1px gray;
+}
+
+text {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+}
