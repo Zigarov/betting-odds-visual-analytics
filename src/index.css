@@ -24,3 +24,8 @@ text {
   font-size: 13px;
   color: yellow;
 }
+
+.axis-label {
+  font-size: 10px;
+  color: yellow;
+}
