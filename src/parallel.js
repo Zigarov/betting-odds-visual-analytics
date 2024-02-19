@@ -2,9 +2,9 @@
 const csvFilePath = '../dataset/odds23.csv';
 
 // Dimensions of the SVG and margins
-const margin = { top: 30, right: 30, bottom: 30, left: 30 };
-const width = 1000 - margin.left - margin.right;
-const height = 500 - margin.top - margin.bottom;
+const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+const width = 1200 - margin.left - margin.right;
+const height = 600 - margin.top - margin.bottom;
 
 // Array of axis labels
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU'];
@@ -18,11 +18,11 @@ d3.csv(csvFilePath).then(data => {
 
   // Array of scales for vertical axes
   const yScales = {
-    AvgH: d3.scaleLinear().range([height, 0]).domain([1, 4]),
-    AvgD: d3.scaleLinear().range([height, 0]).domain([1, 4]),
-    AvgA: d3.scaleLinear().range([height, 0]).domain([1, 4]),
+    AvgH: d3.scaleLinear().range([height, 0]).domain([1, 24]),
+    AvgD: d3.scaleLinear().range([height, 0]).domain([1, 14]),
+    AvgA: d3.scaleLinear().range([height, 0]).domain([1, 38]),
     AvgO: d3.scaleLinear().range([height, 0]).domain([1, 4]),
-    AvgU: d3.scaleLinear().range([height, 0]).domain([1, 4])
+    AvgU: d3.scaleLinear().range([height, 0]).domain([1, 5.5])
   };
 
   // Scale for horizontal axes
@@ -45,21 +45,7 @@ d3.csv(csvFilePath).then(data => {
       d3.select(this).call(d3.axisLeft().scale(yScales[d]));
     });
 
-//   // Create connections between axes
-//   svg.append("g")
-//     .attr("class", "lines")
-//     .selectAll("path")
-//     .data(dataset)
-//     .enter().append("path")
-//     .attr("d", d3.line()
-//       .defined(d => !isNaN(d[0])) // Skip NaN values
-//       .x((d, i) => xScale(i))
-//       .y((d, i) => yScales[dimensions[i]](d))
-//     )
-//     .style("fill", "none")
-//     .style("stroke", "steelblue")
-//     .style("stroke-width", 2);
-  // Creazione del gruppo per le linee
+  // Create connections between axes
   const linesGroup = svg.append("g")
     .attr("class", "lines"); // Aggiunta dell'attributo class al gruppo
 

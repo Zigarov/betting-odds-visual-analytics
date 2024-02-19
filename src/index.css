@@ -19,3 +19,8 @@ text {
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
 }
+
+.axis {
+  font-size: 13px;
+  color: yellow;
+}
