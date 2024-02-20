@@ -1,18 +1,32 @@
 body {
   background: #252525;
   color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', ans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
-/* // #root {
-  text-align: center;
-  padding-top: 50px;
-  display: flex;
-  flex-direction: columns;
+.line-highlighted {
+  /* stroke: #ff5722; */
+  stroke: orange;
+  stroke-width: 1px;
+  stroke-opacity: 0.6;
+  /* Leggermente trasparente per un effetto più morbido */
+  /* stroke-linejoin: round; */
+  /* Assicura che le curve e gli angoli siano arrotondati */
+  /* stroke-linecap: round; */
+  /* Estremità della linea arrotondate */
+  /* transition: all 0.3s ease-in-out; */
+  /* Transizione morbida per cambiamenti di stile */
+  /* filter: drop-shadow(0 0 1px #ff5722); */
+  /* Effetto glow intorno alla linea */
+}
+
+/* path.line {
+  stroke: steelblue;
+  stroke-width: 0.5;
 } */
 
 svg {
-  border: solid 1px gray;
+  border: solid 1px grey;
 }
 
 text {
@@ -22,10 +36,11 @@ text {
 
 .axis {
   font-size: 13px;
-  color: yellow;
+  color: khaki;
 }
 
 .axis-label {
-  font-size: 10px;
-  color: yellow;
+  font-size: 16px;
+  fill: khaki;
+  text-anchor: middle;
 }

@@ -8,18 +8,21 @@ const width = 850 - margin.left - margin.right
 const height = 500 - margin.top - margin.bottom
 
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
+const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
   // Convert the data in an array of arrays
   const dataset = data.map(d => dimensions.map(dim => d[dim]))
   let filteredDataset = []  // Array for filtered data.
+  const filteredRanges = {} // Object to store the min and max values for each dimension
 
   //Scales for vertical axes
   const yScales = {}
   dimensions.forEach(dim => {
     const maxVal = d3.max(data, d => +d[dim])
     yScales[dim] = d3.scaleLinear().range([height, 0]).domain([1, maxVal])
+    filteredRanges[dim] = [1, maxVal]
   })
 
   // Scale for horizontal axis
@@ -44,60 +47,40 @@ d3.csv(csvFilePath).then(data => {
       // Crea e aggiunge il brush a ciascun asse
       const brush = d3.brushY()
         .extent([[-25, 0], [25, height]]) // Definisce l'intorno dell'asse per il brushing
-        .on("brush", (event) => brushed(event, d)); // Imposta la funzione di callback per l'evento di brush
+        .on("brush", (event) => brushed(event, d)) // Imposta la funzione di callback per l'evento di brush
 
       d3.select(this).append("g")
         .attr("class", "brush")
-        .call(brush);
-    });
+        .call(brush)
+    })
 
     function brushed(event, dimension) {
       if (event.selection) {
-        const [y0, y1] = event.selection;
-        const valueRange = [yScales[dimension].invert(y1), yScales[dimension].invert(y0)]; // Converti in valori di dominio
-        // console.log(`Coordinate selezionate per ${dimension}:`, valueRange);
-
-        // Filtra il dataset originale basandosi sul valore di 'dimension' e 'valueRange'
-        // const filteredDataset = data.filter(d => {
-        filteredDataset = dataset.filter(d => {
-
-          // Converti il valore di 'd[dimension]' in un numero per il confronto
-          const value = +d[dimensions.indexOf(dimension)];
-          return value >= valueRange[0] && value <= valueRange[1];
-        });
-        console.log(filteredDataset);
-        // Chiamata alla funzione colorFilter per modificare il colore delle linee
-        colorFilter()
+        const [y0, y1] = event.selection
+        const valueRange = [yScales[dimension].invert(y1), yScales[dimension].invert(y0)] // Converti in valori di domini
+        filteredRanges[dimension] = valueRange // Aggiorna l'intervallo di valori per la dimensione corrente
+        highlight() // Chiama la funzione per filtrare i dati
       }
     }
 
-    function colorFilter() {
-      // Estrai gli ID univoci dai dati filtrati
-      // const filteredIds = filteredDataset.map(d => d.id);
-      // console.log(filteredIds)
-      // filteredDataset.forEach(d => {
-      //   if(dataset.includes(d)){
-      //     console.log('amala')
-      //   }
-      // })
-      // Seleziona tutte le linee e aggiorna il colore solo per quelle che corrispondono agli ID in filteredIds
-      svg.selectAll("path.line")
-        .attr("stroke", function (d) {
-          // console.log(d.id)
-          // Assumi che l'oggetto dati di ciascuna linea includa un campo `id`
-          return filteredDataset.includes(d) ? "orange" : "steelblue";
-        });
-    }
+  function highlight() {
+    d3.selectAll("path.line")
+      .classed("line-highlighted", function (d) {
+        // Assicurati che ogni punto in d soddisfi la condizione per la sua dimensione
+        return d.every( (p,idx) => {
+          const [min, max] = filteredRanges[dimensions[idx]] // Gli intervalli [min, max] per quella dimensione
+          return p >= min && p <= max // Controlla se il valore è all'interno dell'intervallo
+        })
+      })
+  }
   
-
   // Aggiunta delle etichette sopra gli assi
   svg.selectAll(".axis-label")
-    .data(dimensions)
+    .data(oddsLabels)
     .enter().append("text")
     .attr("class", "axis-label")
-    .attr("transform", (d, i) => `translate(${xScale(i)},${-10})`) // Posizionamento sopra l'asse
-    .attr("text-anchor", "middle") // Allinea il testo al centro dell'asse
-    .text(d => d); // Imposta il testo dell'etichetta al valore corrispondente in `dimensions`
+    .attr("transform", (d, i) => `translate(${xScale(i)},${height+20})`) // Posizionamento sopra l'asse
+    .text(d => d) // Imposta il testo dell'etichetta al valore corrispondente in `dimensions`
   
   // Create connections between axes
   const linesGroup = svg.append("g")
@@ -121,6 +104,7 @@ d3.csv(csvFilePath).then(data => {
       .attr("fill", "none")
       .attr("stroke", "steelblue")
       .attr("stroke-width", 0.5)
+      .attr("stroke-opacity", 0.4)
       .attr("d", line) // Applicazione della funzione line per generare il percorso
   })
 })
