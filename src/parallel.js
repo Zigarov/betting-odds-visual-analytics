@@ -4,11 +4,20 @@ const csvFilePath = '../dataset/oddsITA23.csv'
 
 // Dimensions of the SVG and margins
 const margin = { top: 20, right: 30, bottom: 30, left: 40 }
-const width = 850 - margin.left - margin.right
-const height = 500 - margin.top - margin.bottom
+const width = 650 - margin.left - margin.right
+const height = 400 - margin.top - margin.bottom
 
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
+
+// TABLE:
+d3.select("#table-container")
+  .style("width", "50%") // Imposta la larghezza al 50% dello schermo
+  .style("height", "50%") // Imposta l'altezza
+  .style("overflow-x", "auto") // Permette lo scroll orizzontale se necessario
+  .style("position", "absolute") // Posizionamento assoluto
+  .style("right", "0px") // Allinea a destra
+  .style("top", "0px"); // Allinea in alto
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
@@ -29,7 +38,7 @@ d3.csv(csvFilePath).then(data => {
   const xScale = d3.scaleLinear().domain([0, dimensions.length - 1]).range([0, width])
 
   // Create SVG with margin
-  const svg = d3.select("#root").append("svg")
+  const svg = d3.select("#parallel-coordinates").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -60,6 +69,19 @@ d3.csv(csvFilePath).then(data => {
         const valueRange = [yScales[dimension].invert(y1), yScales[dimension].invert(y0)] // Converti in valori di domini
         filteredRanges[dimension] = valueRange // Aggiorna l'intervallo di valori per la dimensione corrente
         highlight() // Chiama la funzione per filtrare i dati
+
+        const filteredData = data.filter(row => {
+          return dimensions.every(dimension => {
+            // Se la dimensione non è presente in filteredRanges, considera la riga valida
+            if (!filteredRanges[dimension]) return true;
+
+            // Altrimenti, controlla se il valore della dimensione è compreso nel range
+            const [min, max] = filteredRanges[dimension];
+            return row[dimension] >= min && row[dimension] <= max;
+          });
+        });
+        console.log(filteredData)
+        updateTable(filteredData)
       }
     }
 
@@ -107,5 +129,46 @@ d3.csv(csvFilePath).then(data => {
       .attr("stroke-opacity", 0.4)
       .attr("d", line) // Applicazione della funzione line per generare il percorso
   })
+
+  function updateTable(filteredData) {
+    d3.select("#table-container").selectAll("table").remove();
+
+    // Seleziona il contenitore della tabella
+    const table = d3.select("#table-container").append("table");
+    const thead = table.append("thead");
+    const tbody = table.append("tbody");
+
+    // Aggiungi l'intestazione della tabella (modifica questo per riflettere le tue colonne)
+    thead.append("tr")
+      .selectAll("th")
+      .data(Object.keys(filteredData[0])) // Assumi che tutti gli oggetti abbiano le stesse chiavi
+      .enter()
+      .append("th")
+      .text(function (column) { return column; })
+      .attr("style", "color: steel blue; font-size: 12px; text-align: center; padding: 5px; border: 1px solid #ccc;")
+
+
+    // Aggiungi le righe della tabella
+    const rows = tbody.selectAll("tr")
+      .data(filteredData)
+      .enter()
+      .append("tr");
+
+    // Crea le celle per ogni riga
+    const cells = rows.selectAll("td")
+      .data(function (row) {
+        return Object.keys(row).map(function (column) {
+          return { column: column, value: row[column] };
+        });
+      })
+      .enter()
+      .append("td")
+      .text(function (d) { return d.value; })
+      .attr("style", "color: #ccc; font-size: 12px; text-align: center; padding: 5px; border: 1px solid #ccc;");
+  }
+  // Assicurati di chiamare updateTable() ogni volta che i dati filtrati cambiano
 })
+
+
+
 

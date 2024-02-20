@@ -44,3 +44,29 @@ text {
   fill: khaki;
   text-anchor: middle;
 }
+
+#visualization-container {
+  display: flex;
+  flex-direction: row;
+  /* Disponi figli in riga */
+  justify-content: space-between;
+  /* Spazia i figli equamente */
+  align-items: start;
+  /* Allinea i figli all'inizio del contenitore */
+  height: 500px;
+  /* Altezza del contenitore */
+}
+
+#parallel-coordinates {
+  flex-basis: 50%;
+  /* Assegna al grafico il 50% della larghezza del contenitore */
+  margin-right: 20px;
+  /* Margini opzionali per non attaccare la tabella */
+}
+
+#table-container {
+  flex-basis: 50%;
+  /* Assegna alla tabella il 50% della larghezza del contenitore */
+  overflow-x: auto;
+  /* Permetti lo scroll orizzontale se la tabella è troppo larga */
+}
