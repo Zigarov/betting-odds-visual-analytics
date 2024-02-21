@@ -22,12 +22,12 @@ text {
 }
 
 .axis {
-  font-size: 13px;
+  font-size: 11px;
   color: khaki;
 }
 
 .axis-label {
-  font-size: 16px;
+  font-size: 11px;
   fill: khaki;
   text-anchor: middle;
 }

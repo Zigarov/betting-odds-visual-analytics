@@ -3,28 +3,34 @@
 const csvFilePath = '../dataset/oddsITA23.csv'
 
 // Dimensions of the SVG and margins
-const margin = { top: 10, right: 10, bottom: 30, left: 30 }
+const margin = { top: 10, right: 20, bottom: 30, left: 30}
 //const width = 650 - margin.left - margin.right
 //const height = 400 - margin.top - margin.bottom
 
 // Seleziona l'elemento di visualizzazione
-var visualization = d3.select("#parallel-coordinates");
-
+const visualization = d3.select("#parallel-coordinates");
 // Utilizza le proprietà del DOM per ottenere larghezza e altezza
-var width = visualization.node().clientWidth - margin.left - margin.right
-var height = visualization.node().clientHeight - margin.top - margin.bottom
+const width = visualization.node().clientWidth - margin.left - margin.right
+const height = visualization.node().clientHeight - margin.top - margin.bottom
 
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
-  const stats = Stats(data)
-  console.log(stats)
+  drawComparativeChart(Stats(data))
   // Convert the data in an array of arrays
   const dataset = data.map(d => dimensions.map(dim => d[dim]))
   let filteredDataset = []  // Array for filtered data.
   const filteredRanges = {} // Object to store the min and max values for each dimension
+
+  // const svg1 = d3.select("#comparative-chart").append("svg")
+  //   .attr("width", '100%')
+  //   .attr("height", '100%')
+
+  const svg2 = d3.select("#scatter-plot").append("svg")
+    .attr("width", '100%')
+    .attr("height", '100%')
 
   // Create SVG with margin
   const svg = d3.select("#parallel-coordinates").append("svg")
@@ -34,14 +40,6 @@ d3.csv(csvFilePath).then(data => {
     .attr("height", '100%')
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`)
-
-  const svg1 = d3.select("#comparative-chart").append("svg")
-    .attr("width", '100%')
-    .attr("height", '100%')
-
-  const svg2 = d3.select("#scatter-plot").append("svg")
-    .attr("width", '100%')
-    .attr("height", '100%')
   
 
   //Scales for vertical axes
@@ -94,6 +92,7 @@ d3.csv(csvFilePath).then(data => {
         // console.log(stats(filteredData))
         // console.log(frequencies(filteredData))
         updateTable(filteredData)
+        drawComparativeChart(Stats(filteredData))
       }
     }
 
@@ -110,7 +109,7 @@ d3.csv(csvFilePath).then(data => {
   
   // Aggiunta delle etichette sopra gli assi
   svg.selectAll(".axis-label")
-    .data(oddsLabels)
+    .data(dimensions)
     .enter().append("text")
     .attr("class", "axis-label")
     .attr("transform", (d, i) => `translate(${xScale(i)},${height+20})`) // Posizionamento sopra l'asse
@@ -161,7 +160,7 @@ d3.csv(csvFilePath).then(data => {
       .enter()
       .append("th")
       .text(function (column) { return column; })
-      .attr("style", "color: steel blue; font-size: 12px; text-align: center; padding: 5px; border: 1px solid #ccc;")
+      .attr("style", "color: steelblue; font-size: 12px; text-align: center; padding: 5px; border: 1px solid #ccc;")
 
 
     // Aggiungi le righe della tabella
@@ -189,6 +188,9 @@ d3.csv(csvFilePath).then(data => {
       return
     }
     const stats = {}
+    const frequencies = Frequencies(data)
+    console.log(frequencies)
+
     dimensions.forEach(dim => {
       sortedColumn = data.map(d => 1 / Number(d[dim])).sort(d3.ascending)
 
@@ -205,21 +207,22 @@ d3.csv(csvFilePath).then(data => {
         'median': d3.median(sortedColumn),
         'q1': q1,
         'q3': q3,
-        'lowerWhisker': d3.max(sortedColumn.filter(d => d >= lowerBound)),
-        'upperWhisker': d3.min(sortedColumn.filter(d => d <= upperBound)),
+        'lowerWhisker': d3.min(sortedColumn.filter(d => d >= lowerBound)),
+        'upperWhisker': d3.max(sortedColumn.filter(d => d <= upperBound)),
         'outliers': outliers,
+        'frequence': frequencies[dim]
       }
     })
     return stats
   }
-
+    
   function Frequencies(data) {
     if (data.length != 0 || data != undefined) {
       const step = 1/data.length  // counting step for frequencies
       const results = ['H', 'D', 'A', 'Ov', 'Un'] // possible results
 
       // Initialize frequencies object
-      const frequencies = results.reduce((acc, result) => {
+      const frequencies = dimensions.reduce((acc, result) => {
         acc[result] = 0
         return acc
       }, {})
@@ -227,16 +230,155 @@ d3.csv(csvFilePath).then(data => {
       // Itera su ogni elemento di 'data' per popolare 'frequencies'
       data.forEach(row => {
         const result = row.FTR; // Ottiene il valore della colonna 'FTR'
-        frequencies[result] += step; // Incrementa il conteggio per il risultato corrente
-        const goalScored = row.HG + row.AG
+        frequencies[dimensions[results.indexOf(result)]] += step; // Incrementa il conteggio per il risultato corrente
+        const goalScored = Number(row.HG) + Number(row.AG)
         if (goalScored > 2) {
-          frequencies['Ov'] += step
+          frequencies['AvgO'] += step
         } else {
-          frequencies['Un'] += step
+          frequencies['AvgU'] += step
         } 
       })
       return frequencies
     }
+  }
+
+  function drawComparativeChart(metrics) {
+    // Seleziona il contenitore
+    const container = d3.select('#comparative-chart')
+
+    // const freq = Frequencies(data)
+    // console.log(freq)
+
+    // Calcola le dimensioni effettive del grafico, sottraendo i margini
+    const chartWidth = container.node().getBoundingClientRect().width - margin.left - margin.right;
+    const chartHeight = container.node().getBoundingClientRect().height - margin.top - margin.bottom;
+    container.selectAll("svg").remove()
+
+    const svg = container.append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .append('g')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`)
+    
+    // Scala per l'asse X
+    const xScale = d3.scaleLinear()
+      .domain([0, 1]) // Inverti il dominio per avere 1 in basso e 0 in alto
+      .range([0, width]); // L'intervallo di altezza del grafico
+
+    // Scala per l'asse Y
+    const yScale = d3.scaleBand()
+      .domain(dimensions) // Le tue categorie
+      .range([0, height]) // L'intervallo effettivo di pixel dove saranno posizionati i boxplot
+      .padding(0.1); // Imposta un piccolo padding tra ciascun boxplot
+
+    // Crea un gruppo per gli assi se non esiste, altrimenti lo seleziona
+    const axisGroup = svg.selectAll('.axis')
+      .data([null]) // Usa .data([null]) per assicurare che il gruppo venga creato una sola volta
+      .join('g')
+      .attr('class', 'axis');
+
+    // Aggiungi l'asse X al gruppo degli assi
+    axisGroup.append("g")
+      .attr("transform", `translate(${margin.left}, ${height + margin.top})`)
+      .call(d3.axisBottom(xScale));
+
+    // Aggiungi l'asse Y al gruppo degli assi
+    axisGroup.append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`)
+      .call(d3.axisLeft(yScale))
+    // Assicurati di selezionare o creare un gruppo per i boxplot all'interno della SVG
+    const boxplotGroup = svg.selectAll('.boxplots')
+      .data([null]) // Assicura la creazione di un solo gruppo
+      .join('g')
+      .attr('class', 'boxplots')
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Per ciascuna dimensione, disegna il boxplot
+    dimensions.forEach(dim => {
+      const stat = metrics[dim]
+      console.log(stat)
+
+      // Calcola la posizione Y del centro del boxplot per questa dimensione
+      const dy = yScale.bandwidth() / 2
+      const y = yScale(dim) + dy
+
+      // Disegna il rettangolo (quartili)
+      boxplotGroup.append('rect')
+        .attr('x', xScale(stat.q1))
+        .attr('y', y - dy) // Centra il boxplot e regola l'altezza
+        .attr('width', xScale(stat.q3) - xScale(stat.q1))
+        .attr('height', dy * 2) // Altezza del boxplot (la metà della larghezza del padding tra i boxplot)
+        .attr('fill', 'steelblue')
+        .attr('opacity', 0.8) // Rendi l'area leggermente trasparente
+
+
+      // Disegna la linea mediana
+      boxplotGroup.append('line')
+        .attr('x1', xScale(stat.median))
+        .attr('x2', xScale(stat.median))
+        .attr('y1', y - dy)
+        .attr('y2', y + dy)
+        .attr('stroke', 'red')
+        .attr('stroke-width', 2) // Rende la linea più spessa
+
+
+      // Disegna la linea della media
+      boxplotGroup.append('line')
+        .attr('x1', xScale(stat.mean))
+        .attr('x2', xScale(stat.mean))
+        .attr('y1', y - dy)
+        .attr('y2', y + dy)
+        .attr('stroke', 'red') // Usa un colore diverso per distinguere la media
+        .attr('stroke-dasharray', '2,2') // Rende la linea tratteggiata
+        .attr('stroke-width', 2) // Rende la linea più spessa
+
+      // Disegna l'area della deviazione standard come rettangolo ombreggiato
+      const stdRangeMin = stat.mean - stat.std;
+      const stdRangeMax = stat.mean + stat.std;
+      boxplotGroup.append('rect')
+        .attr('x', xScale(stdRangeMin))
+        .attr('y', y - dy/2)
+        .attr('width', xScale(stdRangeMax) - xScale(stdRangeMin))
+        .attr('height', dy)
+        .attr('fill', 'steelblue') // Usa un colore leggero per l'area della deviazione standard
+        .attr('opacity', 0.5) // Rendi l'area leggermente trasparente
+
+      // Disegna i baffi (whiskers)
+
+      // Linea del baffo inferiore
+      boxplotGroup.append('line')
+        .attr('x1', xScale(stat.lowerWhisker))
+        .attr('x2', xScale(stat.q1))
+        .attr('y1', y)
+        .attr('y2', y)
+        .attr('stroke', 'steelblue');
+      // Linea del baffo superiore
+      boxplotGroup.append('line')
+        .attr('x1', xScale(stat.q3))
+        .attr('x2', xScale(stat.upperWhisker))
+        .attr('y1', y)
+        .attr('y2', y)
+        .attr('stroke', 'steelblue');
+
+      // Disegna gli outliers come punti
+      stat.outliers.forEach(outlier => {
+        boxplotGroup.append('circle')
+          .attr('cx', xScale(outlier))
+          .attr('cy', y)
+          .attr('r', 2)
+          .attr('fill', 'red');
+      })
+
+      // Definisce un generatore di simboli
+      const symbolGenerator = d3.symbol().type(d3.symbolCross).size(32); // Scegli il tipo e la dimensione
+      console.log(stat.frequence)
+      // Appende un simbolo a un punto specifico del grafico
+      boxplotGroup.append('path')
+        .attr('d', symbolGenerator()) // Imposta il percorso del simbolo
+        .attr('transform', `translate(${xScale(stat.frequence)}, ${y})`) // Posiziona il simbolo
+        .attr('fill', 'gold'); // Colore del simbolo
+    });
+
   }
 })
 
