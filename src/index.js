@@ -3,21 +3,31 @@
 const csvFilePath = '../dataset/oddsITA23.csv'
 
 // Dimensions of the SVG and margins
-const margin = { top: 20, right: 30, bottom: 30, left: 40 }
-const width = 650 - margin.left - margin.right
-const height = 400 - margin.top - margin.bottom
+const margin = { top: 10, right: 10, bottom: 30, left: 30 }
+//const width = 650 - margin.left - margin.right
+//const height = 400 - margin.top - margin.bottom
+
+// Seleziona l'elemento di visualizzazione
+var visualization = d3.select("#parallel-coordinates");
+
+// Utilizza le proprietà del DOM per ottenere larghezza e altezza
+var width = visualization.node().clientWidth - margin.left - margin.right
+var height = visualization.node().clientHeight - margin.top - margin.bottom
+
+// Ora puoi utilizzare le variabili `width` e `height` come necessario
+console.log("Width:", width, "Height:", height);
 
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 
-// TABLE:
-d3.select("#table-container")
-  .style("width", "50%") // Imposta la larghezza al 50% dello schermo
-  .style("height", "50%") // Imposta l'altezza
-  .style("overflow-x", "auto") // Permette lo scroll orizzontale se necessario
-  .style("position", "absolute") // Posizionamento assoluto
-  .style("right", "0px") // Allinea a destra
-  .style("top", "0px"); // Allinea in alto
+// // TABLE:
+// d3.select("#table-container")
+//   .style("width", "50%") // Imposta la larghezza al 50% dello schermo
+//   .style("height", "50%") // Imposta l'altezza
+//   .style("overflow-x", "auto") // Permette lo scroll orizzontale se necessario
+//   .style("position", "absolute") // Posizionamento assoluto
+//   .style("right", "0px") // Allinea a destra
+//   .style("top", "0px"); // Allinea in alto
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
@@ -25,6 +35,24 @@ d3.csv(csvFilePath).then(data => {
   const dataset = data.map(d => dimensions.map(dim => d[dim]))
   let filteredDataset = []  // Array for filtered data.
   const filteredRanges = {} // Object to store the min and max values for each dimension
+
+  // Create SVG with margin
+  const svg = d3.select("#parallel-coordinates").append("svg")
+    // .attr("width", width + margin.left + margin.right)
+    // .attr("height", height + margin.top + margin.bottom)
+    .attr("width", '100%')
+    .attr("height", '100%')
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`)
+
+  const svg1 = d3.select("#comparative-chart").append("svg")
+    .attr("width", '100%')
+    .attr("height", '100%')
+
+  const svg2 = d3.select("#scatter-plot").append("svg")
+    .attr("width", '100%')
+    .attr("height", '100%')
+  
 
   //Scales for vertical axes
   const yScales = {}
@@ -36,13 +64,6 @@ d3.csv(csvFilePath).then(data => {
 
   // Scale for horizontal axis
   const xScale = d3.scaleLinear().domain([0, dimensions.length - 1]).range([0, width])
-
-  // Create SVG with margin
-  const svg = d3.select("#parallel-coordinates").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`)
 
   // Create vertical axes
   svg.selectAll(".axis")
@@ -164,7 +185,7 @@ d3.csv(csvFilePath).then(data => {
       .enter()
       .append("td")
       .text(function (d) { return d.value; })
-      .attr("style", "color: #ccc; font-size: 12px; text-align: center; padding: 5px; border: 1px solid #ccc;");
+      .attr("style", "color: #ccc; font-size: 12px; text-align: center; padding: 2px; border: 1px solid #ccc;");
   }
   // Assicurati di chiamare updateTable() ogni volta che i dati filtrati cambiano
 })
