@@ -19,6 +19,8 @@ const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
+  const stats = Stats(data)
+  console.log(stats)
   // Convert the data in an array of arrays
   const dataset = data.map(d => dimensions.map(dim => d[dim]))
   let filteredDataset = []  // Array for filtered data.
@@ -89,8 +91,8 @@ d3.csv(csvFilePath).then(data => {
             return row[dimension] >= min && row[dimension] <= max;
           });
         });
-        // computeProbabilities(filteredData)
-        console.log(computeFrequencies(filteredData))
+        // console.log(stats(filteredData))
+        // console.log(frequencies(filteredData))
         updateTable(filteredData)
       }
     }
@@ -141,6 +143,10 @@ d3.csv(csvFilePath).then(data => {
   })
 
   function updateTable(filteredData) {
+    if (filteredData.length === 0 || filteredData === undefined) {
+      console.log('No data to compute Table')
+      return
+    }
     d3.select("#table-container").selectAll("table").remove();
 
     // Seleziona il contenitore della tabella
@@ -177,25 +183,42 @@ d3.csv(csvFilePath).then(data => {
       .attr("style", "color: #ccc; font-size: 12px; text-align: center; padding: 2px; border: 1px solid #ccc;");
   }
 
-  function probabilities(data) {
+  function Stats(data) {
     if (data.length === 0 || data === undefined) {
-      console.log('No data to compute probabilities')
+      console.log('No data to compute stats')
       return
     }
-    const probabilities = {}
+    const stats = {}
     dimensions.forEach(dim => {
-      probabilities[dim] = {
-        'mean': d3.mean(data, d => 1/d[dim]),
-        'std': d3.deviation(data, d => 1/d[dim])
+      sortedColumn = data.map(d => 1 / Number(d[dim])).sort(d3.ascending)
+
+      const q1 = d3.quantile(sortedColumn, 0.25);
+      const q3 = d3.quantile(sortedColumn, 0.75);
+      const iqr = q3 - q1; // Intervallo interquartile
+      const lowerBound = q1 - 1.5 * iqr;
+      const upperBound = q3 + 1.5 * iqr;
+      const outliers = sortedColumn.filter(d => d < lowerBound || d > upperBound);
+
+      stats[dim] = {
+        'mean': d3.mean(sortedColumn),
+        'std': d3.deviation(sortedColumn),
+        'median': d3.median(sortedColumn),
+        'q1': q1,
+        'q3': q3,
+        'lowerWhisker': d3.max(sortedColumn.filter(d => d >= lowerBound)),
+        'upperWhisker': d3.min(sortedColumn.filter(d => d <= upperBound)),
+        'outliers': outliers,
       }
     })
-    return probabilities
+    return stats
   }
 
-  function frequencies(data) {
+  function Frequencies(data) {
     if (data.length != 0 || data != undefined) {
-      const step = 1/data.length
-      const results = ['H', 'D', 'A', 'Ov', 'Un']
+      const step = 1/data.length  // counting step for frequencies
+      const results = ['H', 'D', 'A', 'Ov', 'Un'] // possible results
+
+      // Initialize frequencies object
       const frequencies = results.reduce((acc, result) => {
         acc[result] = 0
         return acc
