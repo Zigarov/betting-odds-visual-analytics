@@ -14,20 +14,8 @@ var visualization = d3.select("#parallel-coordinates");
 var width = visualization.node().clientWidth - margin.left - margin.right
 var height = visualization.node().clientHeight - margin.top - margin.bottom
 
-// Ora puoi utilizzare le variabili `width` e `height` come necessario
-console.log("Width:", width, "Height:", height);
-
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
-
-// // TABLE:
-// d3.select("#table-container")
-//   .style("width", "50%") // Imposta la larghezza al 50% dello schermo
-//   .style("height", "50%") // Imposta l'altezza
-//   .style("overflow-x", "auto") // Permette lo scroll orizzontale se necessario
-//   .style("position", "absolute") // Posizionamento assoluto
-//   .style("right", "0px") // Allinea a destra
-//   .style("top", "0px"); // Allinea in alto
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
@@ -101,7 +89,8 @@ d3.csv(csvFilePath).then(data => {
             return row[dimension] >= min && row[dimension] <= max;
           });
         });
-        console.log(filteredData)
+        // computeProbabilities(filteredData)
+        console.log(computeFrequencies(filteredData))
         updateTable(filteredData)
       }
     }
@@ -187,7 +176,45 @@ d3.csv(csvFilePath).then(data => {
       .text(function (d) { return d.value; })
       .attr("style", "color: #ccc; font-size: 12px; text-align: center; padding: 2px; border: 1px solid #ccc;");
   }
-  // Assicurati di chiamare updateTable() ogni volta che i dati filtrati cambiano
+
+  function probabilities(data) {
+    if (data.length === 0 || data === undefined) {
+      console.log('No data to compute probabilities')
+      return
+    }
+    const probabilities = {}
+    dimensions.forEach(dim => {
+      probabilities[dim] = {
+        'mean': d3.mean(data, d => 1/d[dim]),
+        'std': d3.deviation(data, d => 1/d[dim])
+      }
+    })
+    return probabilities
+  }
+
+  function frequencies(data) {
+    if (data.length != 0 || data != undefined) {
+      const step = 1/data.length
+      const results = ['H', 'D', 'A', 'Ov', 'Un']
+      const frequencies = results.reduce((acc, result) => {
+        acc[result] = 0
+        return acc
+      }, {})
+
+      // Itera su ogni elemento di 'data' per popolare 'frequencies'
+      data.forEach(row => {
+        const result = row.FTR; // Ottiene il valore della colonna 'FTR'
+        frequencies[result] += step; // Incrementa il conteggio per il risultato corrente
+        const goalScored = row.HG + row.AG
+        if (goalScored > 2) {
+          frequencies['Ov'] += step
+        } else {
+          frequencies['Un'] += step
+        } 
+      })
+      return frequencies
+    }
+  }
 })
 
 

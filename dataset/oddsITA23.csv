@@ -1,4 +1,4 @@
-Div,Date,Time,HomeTeam,AwayTeam,FTHG,FTAG,FTR,AvgH,AvgD,AvgA,AvgO,AvgU
+Div,Date,Time,HomeTeam,AwayTeam,HG,AG,FTR,AvgH,AvgD,AvgA,AvgO,AvgU
 I1,13/08/2022,17:30,Milan,Udinese,4,2,H,1.41,4.75,8.14,1.73,2.14
 I1,13/08/2022,17:30,Sampdoria,Atalanta,0,2,A,4.45,3.91,1.77,1.69,2.18
 I1,13/08/2022,19:45,Lecce,Inter,1,2,A,10.22,5.67,1.3,1.6,2.37
