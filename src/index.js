@@ -1,20 +1,15 @@
 // Path to the CSV file
-// const csvFilePath = '../dataset/odds23.csv'
-const csvFilePath = '../dataset/oddsITA23.csv'
-
-// Dimensions of the SVG and margins
-const margin = { top: 10, right: 20, bottom: 30, left: 30}
-//const width = 650 - margin.left - margin.right
-//const height = 400 - margin.top - margin.bottom
-
-// Seleziona l'elemento di visualizzazione
-const visualization = d3.select("#parallel-coordinates");
-// Utilizza le proprietà del DOM per ottenere larghezza e altezza
-const width = visualization.node().clientWidth - margin.left - margin.right
-const height = visualization.node().clientHeight - margin.top - margin.bottom
-
+const csvFilePath = '../dataset/odds23.csv'
+// const csvFilePath = '../dataset/oddsITA23.csv'
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
+
+// Margins for the visualizations
+const margin = { top: 10, right: 20, bottom: 30, left: 30}
+// Get width and height of the visualization
+const visualization = d3.select("#parallel-coordinates");
+const width = visualization.node().clientWidth - margin.left - margin.right
+const height = visualization.node().clientHeight - margin.top - margin.bottom
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath).then(data => {
@@ -24,10 +19,7 @@ d3.csv(csvFilePath).then(data => {
   let filteredDataset = []  // Array for filtered data.
   const filteredRanges = {} // Object to store the min and max values for each dimension
 
-  // const svg1 = d3.select("#comparative-chart").append("svg")
-  //   .attr("width", '100%')
-  //   .attr("height", '100%')
-
+  // Dummy Scatter-plot
   const svg2 = d3.select("#scatter-plot").append("svg")
     .attr("width", '100%')
     .attr("height", '100%')
@@ -137,9 +129,18 @@ d3.csv(csvFilePath).then(data => {
       .attr("fill", "none")
       .attr("stroke", "steelblue")
       .attr("stroke-width", 0.5)
-      .attr("stroke-opacity", 0.4)
+      .attr("stroke-opacity", 0.25)
       .attr("d", line) // Applicazione della funzione line per generare il percorso
   })
+
+  function drawParallelCoordinates(data) {
+    if (data.length === 0 || data === undefined) {
+      console.log('No data to draw Parallel Coordinates Plot')
+      return
+    }
+
+    
+  }
 
   function updateTable(filteredData) {
     if (filteredData.length === 0 || filteredData === undefined) {
@@ -197,8 +198,9 @@ d3.csv(csvFilePath).then(data => {
       const q1 = d3.quantile(sortedColumn, 0.25);
       const q3 = d3.quantile(sortedColumn, 0.75);
       const iqr = q3 - q1; // Intervallo interquartile
-      const lowerBound = q1 - 1.5 * iqr;
-      const upperBound = q3 + 1.5 * iqr;
+      const lowerBound = Math.max(q1 - 1.5 * iqr, 0)
+      const upperBound = Math.min(q3 + 1.5 * iqr, 1)
+      console.log(dim, lowerBound, upperBound)
       const outliers = sortedColumn.filter(d => d < lowerBound || d > upperBound);
 
       stats[dim] = {
@@ -340,7 +342,7 @@ d3.csv(csvFilePath).then(data => {
         .attr('y', y - dy/2)
         .attr('width', xScale(stdRangeMax) - xScale(stdRangeMin))
         .attr('height', dy)
-        .attr('fill', 'steelblue') // Usa un colore leggero per l'area della deviazione standard
+        .attr('fill', 'sky') // Usa un colore leggero per l'area della deviazione standard
         .attr('opacity', 0.5) // Rendi l'area leggermente trasparente
 
       // Disegna i baffi (whiskers)
@@ -351,22 +353,22 @@ d3.csv(csvFilePath).then(data => {
         .attr('x2', xScale(stat.q1))
         .attr('y1', y)
         .attr('y2', y)
-        .attr('stroke', 'steelblue');
+        .attr('stroke', 'white');
       // Linea del baffo superiore
       boxplotGroup.append('line')
         .attr('x1', xScale(stat.q3))
         .attr('x2', xScale(stat.upperWhisker))
         .attr('y1', y)
         .attr('y2', y)
-        .attr('stroke', 'steelblue');
+        .attr('stroke', 'white');
 
       // Disegna gli outliers come punti
       stat.outliers.forEach(outlier => {
         boxplotGroup.append('circle')
           .attr('cx', xScale(outlier))
           .attr('cy', y)
-          .attr('r', 2)
-          .attr('fill', 'red');
+          .attr('r', 1)
+          .attr('fill', 'white');
       })
 
       // Definisce un generatore di simboli
@@ -377,8 +379,7 @@ d3.csv(csvFilePath).then(data => {
         .attr('d', symbolGenerator()) // Imposta il percorso del simbolo
         .attr('transform', `translate(${xScale(stat.frequence)}, ${y})`) // Posiziona il simbolo
         .attr('fill', 'gold'); // Colore del simbolo
-    });
-
+    })
   }
 })
 
