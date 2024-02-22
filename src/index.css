@@ -34,67 +34,46 @@ text {
 
 #visualization-container {
   position: absolute;
-  
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
  
-  width: 95vw;
-  height: 95vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  /* Due colonne */
-  grid-template-rows: 1fr 1fr;
-  /* Due righe */
-  gap: 5px;
-  /* Spazio opzionale tra le celle */
-  box-sizing: border-box;
+  width: 95%;
+  height: 95%;
 }
 
-.visualizaition {
-  box-sizing: border-box;
-  /* Include bordo e padding nel calcolo delle dimensioni */
+#parallel-chart {
+  width: 69%;
+  /* 2/3 width */
+  height: 49%;
+  /* 1/2 height */
+  position: absolute;
+  top: 0;
+  left: 0;
   border: 1px solid #ccc;
-  /* Aggiunge un bordo per distinguere le visualizzazioni */
-  /* padding: 10px; */
-  /* Aggiunge padding interno */
-  /* Aggiunta di overflow: hidden per gestire contenuti che superano le dimensioni del container */
-  /* overflow: hidden; */
-}
-
-/* Correzione al nome della classe da "visualizaition" a "visualization" se è un typo */
-/* Se il nome della classe è effettivamente "visualizaition", ignora questo commento */
-
-
-/* #parallel-coordinates { */
-  /* flex-basis: 50%; */
-  /* Assegna al grafico il 50% della larghezza del contenitore */
-  /* margin-right: 20px; */
-  /* Margini opzionali per non attaccare la tabella */
-/* } */
-
-/* #table-container { */
-  /* flex-basis: 50%; */
-  /* Assegna alla tabella il 50% della larghezza del contenitore */
-  /* overflow-x: auto; */
-  /* Permetti lo scroll orizzontale se la tabella è troppo larga */
-/* } */
-
-/* Ordinamento specifico per ogni visualizzazione */
-#parallel-coordinates {
-  order: 1; /* Alto a sinistra */
-}
-
-#table-container {
-  order: 2;
-  overflow: auto;
-  /* Basso a sinistra */
+  /* Just for visibility */
 }
 
 #scatter-plot {
-  order: 3; /* Alto a destra */
+  width: 69%;
+  /* 2/3 width */
+  height: 49%;
+  /* 1/2 height */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  border: 1px solid #ccc;
+  /* Just for visibility */
 }
 
 #comparative-chart {
-  order: 4; /* Basso a destra */
+ width: 30%;
+  /* 1/3 width */
+  height: 100%;
+  /* full height */
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 1px solid #ccc;
+  /* Just for visibility */
 }
