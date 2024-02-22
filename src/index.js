@@ -8,7 +8,7 @@ const filteredRanges = {} // Object to store the min and max values for each dim
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath, d3.autoType).then(data => {  
   // Draw the parallel Coordinates Plot
-  drawParallelChart(data)
+  drawParallelCoordinates(data)
 
   // Draw the Comparative Chart
   drawComparativeChart(Stats(data))
@@ -17,7 +17,7 @@ d3.csv(csvFilePath, d3.autoType).then(data => {
   drawScatterPlot(reduceData(data.map(d => dimensions.map(dim => d[dim]))))
 })
 
-function drawParallelChart(data) {
+function drawParallelCoordinates(data) {
   // Remove the previous SVG
   d3.select("#parallel-chart").selectAll("svg").remove()
   // Check if the data is empty
