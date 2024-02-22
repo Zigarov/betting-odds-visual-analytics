@@ -3,143 +3,139 @@ const csvFilePath = '../dataset/odds23.csv'
 // const csvFilePath = '../dataset/oddsITA23.csv'
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
+const filteredRanges = {} // Object to store the min and max values for each dimension
+
 
 // Margins for the visualizations
 const margin = { top: 10, right: 20, bottom: 30, left: 30}
 // Get width and height of the visualization
-const visualization = d3.select("#parallel-coordinates");
+const visualization = d3.select("#parallel-coordinates")
 const width = visualization.node().clientWidth - margin.left - margin.right
 const height = visualization.node().clientHeight - margin.top - margin.bottom
 
 // Load CSV dataset and create the parallel coordinate plot
-d3.csv(csvFilePath).then(data => {
-  drawComparativeChart(Stats(data))
-  // Convert the data in an array of arrays
-  const dataset = data.map(d => dimensions.map(dim => d[dim]))
-  let filteredDataset = []  // Array for filtered data.
-  const filteredRanges = {} // Object to store the min and max values for each dimension
+d3.csv(csvFilePath, d3.autoType).then(data => {  
+  // Draw the parallel Coordinates Plot
+  drawParallelCoordinates(data)
 
-  // Dummy Scatter-plot
+  // Draw the Comparative Chart
+  drawComparativeChart(Stats(data))
+
+  // Draw the Scatter Plot
   const svg2 = d3.select("#scatter-plot").append("svg")
     .attr("width", '100%')
     .attr("height", '100%')
-
-  // Create SVG with margin
-  const svg = d3.select("#parallel-coordinates").append("svg")
-    // .attr("width", width + margin.left + margin.right)
-    // .attr("height", height + margin.top + margin.bottom)
-    .attr("width", '100%')
-    .attr("height", '100%')
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`)
   
-
-  //Scales for vertical axes
-  const yScales = {}
-  dimensions.forEach(dim => {
-    const maxVal = d3.max(data, d => +d[dim])
-    yScales[dim] = d3.scaleLinear().range([height, 0]).domain([1, maxVal])
-    filteredRanges[dim] = [1, maxVal]
-  })
-
-  // Scale for horizontal axis
-  const xScale = d3.scaleLinear().domain([0, dimensions.length - 1]).range([0, width])
-
-  // Create vertical axes
-  svg.selectAll(".axis")
-    .data(dimensions)
-    .enter().append("g")
-    .attr("class", "axis")
-    .attr("transform", (d, i) => `translate(${xScale(i)},0)`)
-    .each(function (d, i) {
-      d3.select(this).call(d3.axisLeft().scale(yScales[d]))
-
-      // Crea e aggiunge il brush a ciascun asse
-      const brush = d3.brushY()
-        .extent([[-25, 0], [25, height]]) // Definisce l'intorno dell'asse per il brushing
-        .on("brush", (event) => brushed(event, d)) // Imposta la funzione di callback per l'evento di brush
-
-      d3.select(this).append("g")
-        .attr("class", "brush")
-        .call(brush)
-    })
-
-    function brushed(event, dimension) {
-      if (event.selection) {
-        const [y0, y1] = event.selection
-        const valueRange = [yScales[dimension].invert(y1), yScales[dimension].invert(y0)] // Converti in valori di domini
-        filteredRanges[dimension] = valueRange // Aggiorna l'intervallo di valori per la dimensione corrente
-        highlight() // Chiama la funzione per filtrare i dati
-
-        const filteredData = data.filter(row => {
-          return dimensions.every(dimension => {
-            // Se la dimensione non è presente in filteredRanges, considera la riga valida
-            if (!filteredRanges[dimension]) return true;
-
-            // Altrimenti, controlla se il valore della dimensione è compreso nel range
-            const [min, max] = filteredRanges[dimension];
-            return row[dimension] >= min && row[dimension] <= max;
-          });
-        });
-        // console.log(stats(filteredData))
-        // console.log(frequencies(filteredData))
-        updateTable(filteredData)
-        drawComparativeChart(Stats(filteredData))
-      }
-    }
-
-  function highlight() {
-    d3.selectAll("path.line")
-      .classed("line-highlighted", function (d) {
-        // Assicurati che ogni punto in d soddisfi la condizione per la sua dimensione
-        return d.every( (p,idx) => {
-          const [min, max] = filteredRanges[dimensions[idx]] // Gli intervalli [min, max] per quella dimensione
-          return p >= min && p <= max // Controlla se il valore è all'interno dell'intervallo
-        })
-      })
-  }
-  
-  // Aggiunta delle etichette sopra gli assi
-  svg.selectAll(".axis-label")
-    .data(dimensions)
-    .enter().append("text")
-    .attr("class", "axis-label")
-    .attr("transform", (d, i) => `translate(${xScale(i)},${height+20})`) // Posizionamento sopra l'asse
-    .text(d => d) // Imposta il testo dell'etichetta al valore corrispondente in `dimensions`
-  
-  // Create connections between axes
-  const linesGroup = svg.append("g")
-    .attr("class", "lines") // Aggiunta dell'attributo class al gruppo
-
-  const line = d3.line()
-    .defined(d => !isNaN(d[0])) // Skip NaN values
-    .x((d, i) => xScale(i))
-    .y((d, i) => yScales[dimensions[i]](d))
-
-  // const line = d3.line()
-  //   .defined(d => !isNaN(d[0])) // Skip NaN values
-  //   .x((d) => xScale(d.id))
-  //   .y((d) => yScales[dimensions[d.id]](d))
-
-  // Disegno delle linee
-  dataset.forEach(d => {
-    linesGroup.append("path") // Aggiunta delle linee al gruppo
-      .datum(d) // Utilizzo dei dati dell'array
-      .attr("class", "line") // Assegna la classe a ciascuna linea individualmente
-      .attr("fill", "none")
-      .attr("stroke", "steelblue")
-      .attr("stroke-width", 0.5)
-      .attr("stroke-opacity", 0.25)
-      .attr("d", line) // Applicazione della funzione line per generare il percorso
-  })
-
   function drawParallelCoordinates(data) {
     if (data.length === 0 || data === undefined) {
       console.log('No data to draw Parallel Coordinates Plot')
       return
     }
 
-    
+    // Remove the previous SVG
+    d3.select("#parallel-coordinates").selectAll("svg").remove()
+
+    // Create SVG with margin
+    const svg = d3.select("#parallel-coordinates").append("svg")
+      .attr("width", '100%')
+      .attr("height", '100%')
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`)
+
+    // Scale for horizontal axis
+    const xScale = d3.scaleLinear().domain([0, dimensions.length - 1]).range([0, width])
+    // const xScale = d3.scaleBand().domain(dimensions).range([0, width]).padding(0.1)
+
+    //Scales for vertical axes
+    const yScales = {}
+    dimensions.forEach((dim, i) => {
+      const maxVal = d3.max(data, d => +d[dim])
+      yScales[dim] = d3.scaleLinear().range([height, 0]).domain([1, maxVal])
+      filteredRanges[dim] = [1, maxVal]
+    })
+
+    // Create vertical axes
+    svg.selectAll(".axis")
+      .data(dimensions)
+      .enter().append("g")
+      .attr("class", "axis")
+      .attr("transform", (d, i) => `translate(${xScale(i)},0)`)
+      .each(function (d, i) {
+        d3.select(this).call(d3.axisLeft().scale(yScales[d]))
+        // Crea e aggiunge il brush a ciascun asse
+        const brush = d3.brushY()
+          .extent([[-25, 0], [25, height]]) // Definisce l'intorno dell'asse per il brushing
+          .on("brush", (event) => brushed(event, d, yScales)) // Imposta la funzione di callback per l'evento di brush
+
+        d3.select(this).append("g")
+          .attr("class", "brush")
+          .call(brush)
+      })
+
+    // Aggiunta delle etichette sopra gli assi
+    svg.selectAll(".axis-label")
+      .data(dimensions)
+      .enter().append("text")
+      .attr("class", "axis-label")
+      .attr("transform", (d, i) => `translate(${xScale(i)},${height + 20})`) // Posizionamento sopra l'asse
+      .text(d => d) // Imposta il testo dell'etichetta al valore corrispondente in `dimensions`
+
+    // Create connections between axes
+    const linesGroup = svg.append("g")
+      .attr("class", "lines") // Aggiunta dell'attributo class al gruppo
+
+    const line = d3.line()
+      .x((d, i) => xScale(i))
+      .y((d, i) => yScales[dimensions[i]](d))
+      
+    // Map the data to an array of odds
+    const dataset = data.map(d => dimensions.map(dim => d[dim]))
+
+    // Disegno delle linee
+    dataset.forEach(d => {
+      linesGroup.append("path") // Aggiunta delle linee al gruppo
+        .datum(d) // Utilizzo dei dati dell'array
+        .attr("class", "line") // Assegna la classe a ciascuna linea individualmente
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 0.5)
+        .attr("stroke-opacity", 0.25)
+        .attr("d", line) // Applicazione della funzione line per generare il percorso
+    })
+
+    function brushed(event, dimension, yScales) {
+      if (event.selection) {
+        const [y0, y1] = event.selection  // Gain access to the selection range.
+        // Convert into the original domain value
+        filteredRanges[dimension] = [yScales[dimension].invert(y1), yScales[dimension].invert(y0)]
+        
+        highlightParallelChart() // Highlight the selected lines
+
+        const filteredData = data.filter(row => {
+          return dimensions.every(dimension => {
+            // Se la dimensione non è presente in filteredRanges, considera la riga valida
+            if (!filteredRanges[dimension]) return true
+
+            // Altrimenti, controlla se il valore della dimensione è compreso nel range
+            const [min, max] = filteredRanges[dimension]
+            return row[dimension] >= min && row[dimension] <= max
+          })
+        })
+        updateTable(filteredData)
+        drawComparativeChart(Stats(filteredData))
+      }
+    }
+
+    function highlightParallelChart() {
+      d3.selectAll("path.line")
+        .classed("line-highlighted", function (d) {
+          // Assicurati che ogni punto in d soddisfi la condizione per la sua dimensione
+          return d.every((p, idx) => {
+            const [min, max] = filteredRanges[dimensions[idx]] // Gli intervalli [min, max] per quella dimensione
+            return p >= min && p <= max // Controlla se il valore è all'interno dell'intervallo
+          })
+        })
+    }
   }
 
   function updateTable(filteredData) {
@@ -147,12 +143,12 @@ d3.csv(csvFilePath).then(data => {
       console.log('No data to compute Table')
       return
     }
-    d3.select("#table-container").selectAll("table").remove();
+    d3.select("#table-container").selectAll("table").remove()
 
     // Seleziona il contenitore della tabella
-    const table = d3.select("#table-container").append("table");
-    const thead = table.append("thead");
-    const tbody = table.append("tbody");
+    const table = d3.select("#table-container").append("table")
+    const thead = table.append("thead")
+    const tbody = table.append("tbody")
 
     // Aggiungi l'intestazione della tabella (modifica questo per riflettere le tue colonne)
     thead.append("tr")
@@ -160,48 +156,46 @@ d3.csv(csvFilePath).then(data => {
       .data(Object.keys(filteredData[0])) // Assumi che tutti gli oggetti abbiano le stesse chiavi
       .enter()
       .append("th")
-      .text(function (column) { return column; })
-      .attr("style", "color: steelblue; font-size: 12px; text-align: center; padding: 5px; border: 1px solid #ccc;")
+      .text(function (column) { return column })
+      .attr("style", "color: steelblue font-size: 11px text-align: center padding: 5px border: 1px solid #ccc")
 
 
     // Aggiungi le righe della tabella
     const rows = tbody.selectAll("tr")
       .data(filteredData)
       .enter()
-      .append("tr");
+      .append("tr")
 
     // Crea le celle per ogni riga
     const cells = rows.selectAll("td")
       .data(function (row) {
         return Object.keys(row).map(function (column) {
-          return { column: column, value: row[column] };
-        });
+          return { column: column, value: row[column] }
+        })
       })
       .enter()
       .append("td")
-      .text(function (d) { return d.value; })
-      .attr("style", "color: #ccc; font-size: 12px; text-align: center; padding: 2px; border: 1px solid #ccc;");
+      .text(function (d) { return d.value })
+      .attr("style", "color: #ccc font-size: 11px text-align: center padding: 2px border: 1px solid #ccc")
   }
 
   function Stats(data) {
+    const stats = {}
     if (data.length === 0 || data === undefined) {
       console.log('No data to compute stats')
-      return
+      return stats
     }
-    const stats = {}
     const frequencies = Frequencies(data)
-    console.log(frequencies)
 
     dimensions.forEach(dim => {
       sortedColumn = data.map(d => 1 / Number(d[dim])).sort(d3.ascending)
 
-      const q1 = d3.quantile(sortedColumn, 0.25);
-      const q3 = d3.quantile(sortedColumn, 0.75);
-      const iqr = q3 - q1; // Intervallo interquartile
+      const q1 = d3.quantile(sortedColumn, 0.25)
+      const q3 = d3.quantile(sortedColumn, 0.75)
+      const iqr = q3 - q1 // Intervallo interquartile
       const lowerBound = Math.max(q1 - 1.5 * iqr, 0)
       const upperBound = Math.min(q3 + 1.5 * iqr, 1)
-      console.log(dim, lowerBound, upperBound)
-      const outliers = sortedColumn.filter(d => d < lowerBound || d > upperBound);
+      const outliers = sortedColumn.filter(d => d < lowerBound || d > upperBound)
 
       stats[dim] = {
         'mean': d3.mean(sortedColumn),
@@ -231,8 +225,8 @@ d3.csv(csvFilePath).then(data => {
 
       // Itera su ogni elemento di 'data' per popolare 'frequencies'
       data.forEach(row => {
-        const result = row.FTR; // Ottiene il valore della colonna 'FTR'
-        frequencies[dimensions[results.indexOf(result)]] += step; // Incrementa il conteggio per il risultato corrente
+        const result = row.FTR // Ottiene il valore della colonna 'FTR'
+        frequencies[dimensions[results.indexOf(result)]] += step // Incrementa il conteggio per il risultato corrente
         const goalScored = Number(row.HG) + Number(row.AG)
         if (goalScored > 2) {
           frequencies['AvgO'] += step
@@ -244,17 +238,19 @@ d3.csv(csvFilePath).then(data => {
     }
   }
 
-  function drawComparativeChart(metrics) {
-    // Seleziona il contenitore
+  function drawComparativeChart(metrics) { 
+  // Seleziona il contenitore
     const container = d3.select('#comparative-chart')
+    container.selectAll("svg").remove()
 
-    // const freq = Frequencies(data)
-    // console.log(freq)
+    if (Object.keys(metrics).length === 0) {
+      console.log("The dictionary is empty")
+      return
+    } 
 
     // Calcola le dimensioni effettive del grafico, sottraendo i margini
-    const chartWidth = container.node().getBoundingClientRect().width - margin.left - margin.right;
-    const chartHeight = container.node().getBoundingClientRect().height - margin.top - margin.bottom;
-    container.selectAll("svg").remove()
+    const chartWidth = container.node().getBoundingClientRect().width - margin.left - margin.right
+    const chartHeight = container.node().getBoundingClientRect().height - margin.top - margin.bottom
 
     const svg = container.append('svg')
       .attr('width', '100%')
@@ -265,24 +261,24 @@ d3.csv(csvFilePath).then(data => {
     // Scala per l'asse X
     const xScale = d3.scaleLinear()
       .domain([0, 1]) // Inverti il dominio per avere 1 in basso e 0 in alto
-      .range([0, width]); // L'intervallo di altezza del grafico
+      .range([0, width]) // L'intervallo di altezza del grafico
 
     // Scala per l'asse Y
     const yScale = d3.scaleBand()
       .domain(dimensions) // Le tue categorie
       .range([0, height]) // L'intervallo effettivo di pixel dove saranno posizionati i boxplot
-      .padding(0.1); // Imposta un piccolo padding tra ciascun boxplot
+      .padding(0.1) // Imposta un piccolo padding tra ciascun boxplot
 
     // Crea un gruppo per gli assi se non esiste, altrimenti lo seleziona
     const axisGroup = svg.selectAll('.axis')
       .data([null]) // Usa .data([null]) per assicurare che il gruppo venga creato una sola volta
       .join('g')
-      .attr('class', 'axis');
+      .attr('class', 'axis')
 
     // Aggiungi l'asse X al gruppo degli assi
     axisGroup.append("g")
       .attr("transform", `translate(${margin.left}, ${height + margin.top})`)
-      .call(d3.axisBottom(xScale));
+      .call(d3.axisBottom(xScale))
 
     // Aggiungi l'asse Y al gruppo degli assi
     axisGroup.append("g")
@@ -293,12 +289,12 @@ d3.csv(csvFilePath).then(data => {
       .data([null]) // Assicura la creazione di un solo gruppo
       .join('g')
       .attr('class', 'boxplots')
-      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+      .attr("transform", `translate(${margin.left}, ${margin.top})`)
 
     // Per ciascuna dimensione, disegna il boxplot
     dimensions.forEach(dim => {
-      const stat = metrics[dim]
-      console.log(stat)
+      // Gain access to the stats for this dimension
+      const stat = metrics[dim] 
 
       // Calcola la posizione Y del centro del boxplot per questa dimensione
       const dy = yScale.bandwidth() / 2
@@ -335,8 +331,8 @@ d3.csv(csvFilePath).then(data => {
         .attr('stroke-width', 2) // Rende la linea più spessa
 
       // Disegna l'area della deviazione standard come rettangolo ombreggiato
-      const stdRangeMin = stat.mean - stat.std;
-      const stdRangeMax = stat.mean + stat.std;
+      const stdRangeMin = stat.mean - stat.std
+      const stdRangeMax = stat.mean + stat.std
       boxplotGroup.append('rect')
         .attr('x', xScale(stdRangeMin))
         .attr('y', y - dy/2)
@@ -353,14 +349,14 @@ d3.csv(csvFilePath).then(data => {
         .attr('x2', xScale(stat.q1))
         .attr('y1', y)
         .attr('y2', y)
-        .attr('stroke', 'white');
+        .attr('stroke', 'white')
       // Linea del baffo superiore
       boxplotGroup.append('line')
         .attr('x1', xScale(stat.q3))
         .attr('x2', xScale(stat.upperWhisker))
         .attr('y1', y)
         .attr('y2', y)
-        .attr('stroke', 'white');
+        .attr('stroke', 'white')
 
       // Disegna gli outliers come punti
       stat.outliers.forEach(outlier => {
@@ -368,21 +364,17 @@ d3.csv(csvFilePath).then(data => {
           .attr('cx', xScale(outlier))
           .attr('cy', y)
           .attr('r', 1)
-          .attr('fill', 'white');
+          .attr('fill', 'white')
       })
 
       // Definisce un generatore di simboli
-      const symbolGenerator = d3.symbol().type(d3.symbolCross).size(32); // Scegli il tipo e la dimensione
-      console.log(stat.frequence)
+      const symbolGenerator = d3.symbol().type(d3.symbolCross).size(32) // Scegli il tipo e la dimensione
+
       // Appende un simbolo a un punto specifico del grafico
       boxplotGroup.append('path')
         .attr('d', symbolGenerator()) // Imposta il percorso del simbolo
         .attr('transform', `translate(${xScale(stat.frequence)}, ${y})`) // Posiziona il simbolo
-        .attr('fill', 'gold'); // Colore del simbolo
+        .attr('fill', 'gold') // Colore del simbolo
     })
   }
 })
-
-
-
-
