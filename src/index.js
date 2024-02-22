@@ -1,6 +1,6 @@
 // Path to the CSV file
-const csvFilePath = '../dataset/odds23.csv'
-// const csvFilePath = '../dataset/oddsITA23.csv'
+// const csvFilePath = '../dataset/odds23.csv'
+const csvFilePath = '../dataset/oddsITA23.csv'
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 const filteredRanges = {} // Object to store the min and max values for each dimension
@@ -22,9 +22,9 @@ d3.csv(csvFilePath, d3.autoType).then(data => {
   drawComparativeChart(Stats(data))
 
   // Draw the Scatter Plot
-  const svg2 = d3.select("#scatter-plot").append("svg")
-    .attr("width", '100%')
-    .attr("height", '100%')
+  const dataOdds = data.map(d => dimensions.map(dim => d[dim]))
+  drawScatterPlot(reduceData(dataOdds))
+
   
   function drawParallelCoordinates(data) {
     if (data.length === 0 || data === undefined) {
@@ -376,5 +376,71 @@ d3.csv(csvFilePath, d3.autoType).then(data => {
         .attr('transform', `translate(${xScale(stat.frequence)}, ${y})`) // Posiziona il simbolo
         .attr('fill', 'gold') // Colore del simbolo
     })
+  }
+
+  function drawScatterPlot(data) {
+    // console.log(data)
+
+    // Remove the previous SVG
+    d3.select("#scatter-plot").selectAll("svg").remove()
+
+    // Create SVG with margin
+    const svg = d3.select("#parallel-coordinates").append("svg")
+      .attr("width", '100%')
+      .attr("height", '100%')
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`)
+
+    // Scale for axes
+    const xScale = d3.scaleLinear()
+      .domain(d3.extent(data, d => d[0])).nice() // d[0] è il valore x di ciascun punto
+      .range([0, width])
+
+    const yScale = d3.scaleLinear()
+      .domain(d3.extent(data, d => d[1])).nice() // d[1] è il valore y di ciascun punto
+      .range([height, 0])
+
+      const yAxisX = Math.min(width, Math.max(0, xScale(0)))  
+      const xAxisY = Math.min(height, Math.max(0, yScale(0)))
+
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + xAxisY + ")")
+      .call(d3.axisBottom(xScale))
+
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(" + yAxisX + ",0)")
+      .call(d3.axisLeft(yScale))
+
+    // Disegna i punti
+    svg.selectAll(".point")
+      .data(data)
+      .enter().append("circle")
+      .attr("class", "point")
+      .attr("cx", d => xScale(d[0]))
+      .attr("cy", d => yScale(d[1]))
+      .attr("r", 3)
+      .style("fill", "steelblue");
+    
+  }
+
+  function reduceData(data) {
+    const normalizedData = normalizeData(data)
+    //let distanceMatrix = druid.distance_matrix(druid.Matrix.from(data))
+    let reducedData = new druid.MDS(druid.Matrix.from(normalizedData)).transform()
+    return reducedData.to2dArray
+  }
+
+  function normalizeData(data) {
+    // Calcola la media e la deviazione standard per ogni colonna
+    let means = data[0].map((_, i) => d3.mean(data, row => row[i]));
+    let stdDevs = data[0].map((_, i) => d3.deviation(data, row => row[i]));
+
+    // Applica la normalizzazione Z-score
+    let normalizedData = data.map(row =>
+      row.map((value, i) => (value - means[i]) / stdDevs[i])
+    )
+    return normalizedData
   }
 })
