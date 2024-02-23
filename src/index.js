@@ -4,9 +4,13 @@ const csvFilePath = '../dataset/oddsITA23.csv'
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 const filteredRanges = {} // Object to store the min and max values for each dimension
+let brushScatter; 
+let brushParallel;
 
 // Load CSV dataset and create the parallel coordinate plot
 d3.csv(csvFilePath, d3.autoType).then(data => {  
+  console.log(data)
+
   // Draw the parallel Coordinates Plot
   drawParallelCoordinates(data)
 
@@ -14,7 +18,7 @@ d3.csv(csvFilePath, d3.autoType).then(data => {
   drawComparativeChart(Stats(data))
 
   // Draw the Scatter Plot
-  drawScatterPlot(reduceData(data.map(d => dimensions.map(dim => d[dim]))))
+  drawScatterPlot(data)
 })
 
 function drawParallelCoordinates(data) {
@@ -60,18 +64,18 @@ function drawParallelCoordinates(data) {
     .each(function (d, i) {
       d3.select(this).call(d3.axisLeft().scale(yScales[d]))
       // Crea e aggiunge il brush a ciascun asse
-      const brush = d3.brushY()
+      brushParallel = d3.brushY()
         .extent([[-25, 0], [25, height]]) // Definisce l'intorno dell'asse per il brushing
-        .on("brush", (event) => brushed(event, d, yScales)) // Imposta la funzione di callback per l'evento di brush
+        .on("brush", (event) => brushedParallel(event, d, yScales)) // Imposta la funzione di callback per l'evento di brush
 
       d3.select(this).append("g")
         .attr("class", "brush")
-        .call(brush)
+        .call(brushParallel)
     })
 
   // Aggiunta delle etichette sopra gli assi
   svg.selectAll(".axis-label")
-    .data(dimensions)
+    .data(oddsLabels)
     .enter().append("text")
     .attr("class", "axis-label")
     .attr("transform", (d, i) => `translate(${xScale(i)},${height + 20})`) // Posizionamento sopra l'asse
@@ -100,88 +104,68 @@ function drawParallelCoordinates(data) {
       .attr("d", line) // Applicazione della funzione line per generare il percorso
   })
 
-  function brushed(event, dimension, yScales) {
+  function brushedParallel(event, dimension, yScales) {
+    // d3.select('#scatter-plot').selectAll("brush").call(brushScatter.move, null)
     if (event.selection) {
       const [y0, y1] = event.selection  // Gain access to the selection range.
+      
       // Convert into the original domain value
       filteredRanges[dimension] = [yScales[dimension].invert(y1), yScales[dimension].invert(y0)]
-
-      highlightParallelChart() // Highlight the selected lines
-
-      const filteredData = data.filter(row => {
-        return dimensions.every(dimension => {
-          // Se la dimensione non è presente in filteredRanges, considera la riga valida
-          if (!filteredRanges[dimension]) return true
-
-          // Altrimenti, controlla se il valore della dimensione è compreso nel range
-          const [min, max] = filteredRanges[dimension]
-          return row[dimension] >= min && row[dimension] <= max
+      const filteredData = {}
+      // highlightParallelChart() // Highlight the selected lines
+      svg.selectAll(".line")
+        .classed("line-highlighted", (d, idx) => {
+          if(d.every((p, i) => {
+            const [min, max] = filteredRanges[dimensions[i]] 
+            return p >= min && p <= max
+          }))
+          {
+            filteredData[idx] = data[idx]
+            return true
+          }
         })
-      })
-      // updateTable(filteredData)
       drawComparativeChart(Stats(filteredData))
+      hihglightScatterPlot(filteredData)
     }
   }
 
-  function highlightParallelChart() {
-    d3.selectAll("path.line")
-      .classed("line-highlighted", function (d) {
-        // Assicurati che ogni punto in d soddisfi la condizione per la sua dimensione
-        return d.every((p, idx) => {
-          const [min, max] = filteredRanges[dimensions[idx]] // Gli intervalli [min, max] per quella dimensione
-          return p >= min && p <= max // Controlla se il valore è all'interno dell'intervallo
-        })
-      })
-  }
 }
 
-function updateTable(filteredData) {
-  if (filteredData.length === 0 || filteredData === undefined) {
-    console.log('No data to compute Table')
-    return
+function highlightParallelChart(filteredData) {
+    if (Object.keys(filteredRanges).length === 0) {
+      console.log('No data to highlight')
+    } else {
+      d3.selectAll("path.line")
+        .classed("line-highlighted", function (d, i) {
+          return filteredData[i] !== undefined
+        })
+    }
+}
+
+function hihglightScatterPlot(filteredData) {
+  if (Object.keys(filteredData).length === 0) {
+    console.log('No data to highlight')
   }
-  d3.select("#table-container").selectAll("table").remove()
-
-  // Seleziona il contenitore della tabella
-  const table = d3.select("#table-container").append("table")
-  const thead = table.append("thead")
-  const tbody = table.append("tbody")
-
-  // Aggiungi l'intestazione della tabella (modifica questo per riflettere le tue colonne)
-  thead.append("tr")
-    .selectAll("th")
-    .data(Object.keys(filteredData[0])) // Assumi che tutti gli oggetti abbiano le stesse chiavi
-    .enter()
-    .append("th")
-    .text(function (column) { return column })
-    .attr("style", "color: steelblue font-size: 11px text-align: center padding: 5px border: 1px solid #ccc")
-
-
-  // Aggiungi le righe della tabella
-  const rows = tbody.selectAll("tr")
-    .data(filteredData)
-    .enter()
-    .append("tr")
-
-  // Crea le celle per ogni riga
-  const cells = rows.selectAll("td")
-    .data(function (row) {
-      return Object.keys(row).map(function (column) {
-        return { column: column, value: row[column] }
-      })
-    })
-    .enter()
-    .append("td")
-    .text(function (d) { return d.value })
-    .attr("style", "color: #ccc font-size: 11px text-align: center padding: 2px border: 1px solid #ccc")
+  else {
+    d3.select('#scatter-plot').selectAll(".point")
+      .style('stroke', (d, i) => filteredData[i] !== undefined ? 'gold' : 'none')
+  }
 }
 
 function Stats(data) {
+  // Check if the data is empty
   const stats = {}
-  if (data.length === 0 || data === undefined) {
+
+  if (Object.keys(data).length <2) {
     console.log('No data to compute stats')
     return stats
   }
+  // Convert the data to an array if it is an object
+  if (data.length === undefined) {
+    data = Object.values(data)
+  }
+
+  // Compute Frequencies
   const frequencies = Frequencies(data)
 
   dimensions.forEach(dim => {
@@ -210,7 +194,7 @@ function Stats(data) {
 }
 
 function Frequencies(data) {
-  if (data.length != 0 || data != undefined) {
+  if (Object.keys(data).length > 0) {
     const step = 1 / data.length  // counting step for frequencies
     const results = ['H', 'D', 'A', 'Ov', 'Un'] // possible results
 
@@ -236,24 +220,27 @@ function Frequencies(data) {
 }
 
 function drawComparativeChart(metrics) {
-  // Margins for the visualization
-  const margin = { top: 10, right: 15, bottom: 30, left: 15 }
-  // Get width and height of the visualization
+
+  // Clean the previous visualization 
   const visualization = d3.select('#comparative-chart')
-  const height = visualization.node().clientHeight - margin.top - margin.bottom
-  const width = visualization.node().clientWidth - margin.left - margin.right
   visualization.selectAll("svg").remove()
 
+  // Check if the metrics is empty
   if (Object.keys(metrics).length === 0) {
     console.log("The dictionary is empty")
     return
   }
 
+  // Set Margins for the visualization and get width and height of the visualization
+  const margin = { top: 10, right: 10, bottom: 30, left: 30 }
+  const height = visualization.node().clientHeight - margin.top - margin.bottom
+  const width = visualization.node().clientWidth - margin.left - margin.right
+
   const svg = visualization.append('svg')
     .attr('width', '100%')
     .attr('height', '100%')
     .append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top})`)
+    // .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
   // Scale for horizontal axis (categorical)
   const xScale = d3.scaleBand()
@@ -375,16 +362,21 @@ function drawComparativeChart(metrics) {
 }
 
 function drawScatterPlot(data) {
-  // Remove the previous SVG
-  d3.select("#scatter-plot").selectAll("svg").remove()
-
   // Check if the data is empty
   if (data.length === 0 || data === undefined) {
     console.log('No data to draw Parallel Coordinates Plot')
     return
   }
+
+  // Project the data in two dimensions
+  const projectedData = reduceData(data.map(d => dimensions.map(dim => d[dim])))
+
+  // Remove the previous SVG
+  d3.select("#scatter-plot").selectAll("svg").remove()
+
+
   // Margins for the visualizations
-  const margin = { top: 10, right: 20, bottom: 30, left: 30 }
+  const margin = { top: 15, right: 15, bottom: 15, left: 15 }
   // Get width and height of the visualization
   const visualization = d3.select("#scatter-plot")
   const width = visualization.node().clientWidth - margin.left - margin.right
@@ -395,40 +387,79 @@ function drawScatterPlot(data) {
     .attr("width", '100%')
     .attr("height", '100%')
     .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`)
+    // .attr("transform", `translate(${margin.left},${margin.top})`)
 
-  // Scale for axes
+  // Scale for x-axis 
   const xScale = d3.scaleLinear()
-    .domain(d3.extent(data, d => d[0])).nice() // d[0] è il valore x di ciascun punto
+    .domain(d3.extent(projectedData, d => d[0])).nice() // d[0] è il valore x di ciascun punto
     .range([0, width])
-
+  // Scale for y-axis
   const yScale = d3.scaleLinear()
-    .domain(d3.extent(data, d => d[1])).nice() // d[1] è il valore y di ciascun punto
+    .domain(d3.extent(projectedData, d => d[1])).nice() // d[1] è il valore y di ciascun punto
     .range([height, 0])
 
+  // Axis Coordinates for x and y (0,0)
   const yAxisX = Math.min(width, Math.max(0, xScale(0)))
   const xAxisY = Math.min(height, Math.max(0, yScale(0)))
 
+  // Draw the x-axis
   svg.append("g")
     .attr("class", "axis")
-    .attr("transform", "translate(0," + xAxisY + ")")
+    .attr("transform", `translate(${margin.left} , ${xAxisY})`)
     .call(d3.axisBottom(xScale))
-
+  // Draw the y-axis
   svg.append("g")
     .attr("class", "axis")
-    .attr("transform", "translate(" + yAxisX + ",0)")
+    .attr("transform", `translate(${yAxisX}, ${margin.top})`)
     .call(d3.axisLeft(yScale))
 
-  // Disegna i punti
-  svg.selectAll(".point")
-    .data(data)
-    .enter().append("circle")
-    .attr("class", "point")
-    .attr("cx", d => xScale(d[0]))
-    .attr("cy", d => yScale(d[1]))
-    .attr("r", 3)
-    .style("fill", "steelblue");
+  // Draw the points
 
+  const symbolGenerator = d3.symbol().size(32); // Dimensione del simbolo in pixel quadrati
+
+  svg.selectAll(".point")
+    .data(projectedData)
+    .enter().append("path")
+    .attr("class", "point")
+    // .attr("d", (d, i) => symbolGenerator.type(isOver2(data[i]) ? d3.symbolCircle : d3.symbolTriangle)()) // Imposta il percorso del simbolo
+    .attr("d", d3.symbol().type(d3.symbolTriangle).size(32)) // Imposta il percorso del simbolo
+    // .attr("transform", d => `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)`) // Posiziona il simbolo
+    .attr("transform", (d, i) => isOver2(data[i]) ? `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)` : `translate(${xScale(d[0])},${yScale(d[1])})`) // Posiziona il simbolo
+    .style("fill", (d, i) => data[i].FTR === 'H' ? 'red' : data[i].FTR === 'D' ? 'white' : 'green') // Border Color
+    // .style("fill", "none") // Fill Color
+    // .style("stroke-width", 1.5) // Border Width
+
+  brushScatter = d3.brush()
+    .extent([[0, 0], [width, height]]) // Definisce l'area su cui il brush può essere applicato
+    .on("brush", event => brushedScatter(event, data)) // Eventi da gestire durante e dopo il brushing
+
+  // Aggiungi l'elemento brush al tuo SVG
+  svg.append("g")
+    .attr("class", "brush")
+    .call(brushScatter);
+
+  function brushedScatter(event, data) {
+    const filteredData = {}
+    if (!event.selection) {
+      console.log('No points selected')
+    } else {
+      const [[x0, y0], [x1, y1]] = event.selection
+      svg.selectAll(".point")
+        .style("stroke", (d,i) => {
+          // Usa le scale per controllare se il punto è dentro la selezione
+          const x = xScale(d[0]), y = yScale(d[1]);
+          if (x >= x0 && x <= x1 && y >= y0 && y <= y1) {
+            filteredData[i] = data[i]
+            return "gold";
+          }
+          // return x >= x0 && x <= x1 && y >= y0 && y <= y1 ? "orange" : "none";
+        });
+      // Draw the Comparative Chart
+      drawComparativeChart(Stats(filteredData))
+      // Highlight the selected lines in the Parallel Coordinates Plot
+      highlightParallelChart(filteredData)
+    }
+  }
 }
 
 function reduceData(data) {
@@ -448,4 +479,16 @@ function normalizeData(data) {
     row.map((value, i) => (value - means[i]) / stdDevs[i])
   )
   return normalizedData
+}
+
+function isOver2(row) {
+  const goalScored = Number(row.HG) + Number(row.AG)
+  if (goalScored > 2) {
+    return true
+  } else {
+    return false
+  }
+}
+
+function Update(filteredData) {
 }

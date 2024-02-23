@@ -24,6 +24,8 @@ text {
 .axis {
   font-size: 11px;
   color: khaki;
+  /* color: khaki; */
+  /* opacity: 0.9; */
 }
 
 .axis-label {
