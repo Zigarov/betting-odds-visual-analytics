@@ -1,6 +1,6 @@
 // Path to the CSV file
-// const csvFilePath = '../dataset/odds23.csv'
-const csvFilePath = '../dataset/oddsITA23.csv'
+const csvFilePath = '../dataset/odds23.csv'
+// const csvFilePath = '../dataset/oddsITA23.csv'
 const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
 const oddsLabels = ['1', 'X', '2', 'Ov', 'Un']
 const filteredRanges = {} // Object to store the min and max values for each dimension
