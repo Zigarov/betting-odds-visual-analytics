@@ -184,8 +184,8 @@ function Stats(data) {
       'median': d3.median(sortedColumn),
       'q1': q1,
       'q3': q3,
-      'lowerWhisker': d3.min(sortedColumn.filter(d => d >= lowerBound)),
-      'upperWhisker': d3.max(sortedColumn.filter(d => d <= upperBound)),
+      'min': d3.min(sortedColumn.filter(d => d >= lowerBound)),
+      'max': d3.max(sortedColumn.filter(d => d <= upperBound)),
       'outliers': outliers,
       'frequence': frequencies[dim]
     }
@@ -292,6 +292,29 @@ function drawComparativeChart(metrics) {
       .attr('width', dx * 2) // Altezza del boxplot (la metà della larghezza del padding tra i boxplot)
       .attr('fill', 'steelblue')
       .attr('opacity', 0.8) // Rendi l'area leggermente trasparente
+      .on('mouseover', function (event) { 
+        d3.select('.tooltip')
+          .style('opacity', 1)
+          .html(() => {
+            // Costruisci una stringa con tutte le chiavi-valori di `stat`
+            let content = ``;
+            Object.keys(stat).forEach(key => {
+              if (key === 'outliers') {
+                content += `outliers: ${stat[key].length}<br/>`;
+              }
+              else {
+                const value = typeof stat[key] === 'number' ? stat[key].toFixed(2) : stat[key];
+                content += `${key}: ${value}<br/>`;
+              }
+            });
+            return content;
+          })
+          .style('left', (event.pageX + 10) + 'px') // Posiziona il tooltip a destra del cursore
+          .style('top', (event.pageY + 10) + 'px'); // Posiziona il tooltip sotto il cursore
+      })
+      .on('mouseout', function (event, d) {
+        d3.select('.tooltip').style('opacity', 0); // Nascondi il tooltip
+      })
 
     // Disegna la linea mediana
     boxplotGroup.append('line')
@@ -330,7 +353,7 @@ function drawComparativeChart(metrics) {
     boxplotGroup.append('line')
       .attr('x1', x)
       .attr('x2', x)
-      .attr('y1', yScale(stat.lowerWhisker))
+      .attr('y1', yScale(stat.min))
       .attr('y2', yScale(stat.q1))
       .attr('stroke', 'white')
     // Linea del baffo superiore
@@ -338,7 +361,7 @@ function drawComparativeChart(metrics) {
       .attr('x1', x)
       .attr('x2', x)
       .attr('y1', yScale(stat.q3))
-      .attr('y2', yScale(stat.upperWhisker))
+      .attr('y2', yScale(stat.max))
       .attr('stroke', 'white')
 
     // Disegna gli outliers come punti

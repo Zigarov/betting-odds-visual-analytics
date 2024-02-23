@@ -79,3 +79,15 @@ text {
   border: 1px solid #ccc;
   /* Just for visibility */
 }
+
+.tooltip {
+  position: absolute;
+  text-align: center;
+  padding: 8px;
+  font: 12px sans-serif;
+  background: black;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0.9;
+}
