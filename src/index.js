@@ -8,9 +8,8 @@ let brushScatter;
 let brushParallel;
 
 // Load CSV dataset and create the parallel coordinate plot
-d3.csv(csvFilePath, d3.autoType).then(data => {  
-  console.log(data)
-
+d3.csv(csvFilePath, d3.autoType).then(data => {
+  console.log('Data Loaded:', data)  
   // Draw the parallel Coordinates Plot
   drawParallelCoordinates(data)
 
@@ -290,7 +289,10 @@ function drawComparativeChart(metrics) {
       .attr('y', yScale(stat.q3))
       .attr('height', yScale(stat.q1) - yScale(stat.q3))
       .attr('width', dx * 2) // Altezza del boxplot (la metà della larghezza del padding tra i boxplot)
-      .attr('fill', 'steelblue')
+      .attr('fill', 'none')
+      .attr('stroke', 'gold')
+      .attr('stroke-width', 2)
+      .attr('fill', 'none')
       .attr('opacity', 0.8) // Rendi l'area leggermente trasparente
       .on('mouseover', function (event) { 
         d3.select('.tooltip')
@@ -328,11 +330,11 @@ function drawComparativeChart(metrics) {
 
     // Disegna la linea della media
     boxplotGroup.append('line')
-      .attr('x1', x - dx)
-      .attr('x2', x + dx)
+      .attr('x1', x - dx / 2)
+      .attr('x2', x + dx / 2)
       .attr('y1', yScale(stat.mean))
       .attr('y2', yScale(stat.mean))
-      .attr('stroke', 'orange') // Usa un colore diverso per distinguere la media
+      .attr('stroke', 'khaki') // Usa un colore diverso per distinguere la media
       .attr('stroke-dasharray', '2,2') // Rende la linea tratteggiata
       .attr('stroke-width', 2) // Rende la linea più spessa
 
@@ -344,25 +346,27 @@ function drawComparativeChart(metrics) {
       .attr('y', yScale(stdRangeMax))
       .attr('height', yScale(stdRangeMin) - yScale(stdRangeMax))
       .attr('width', dx)
-      .attr('fill', 'green') // Usa un colore leggero per l'area della deviazione standard
-      .attr('opacity', 0.5) // Rendi l'area leggermente trasparente
+      .attr('stroke', 'khaki')
+      .attr('stroke-width', 2)
+      .attr('fill', 'none')
+      .attr('fill', 'none') 
+      .attr('stroke-dasharray', '2,2')
 
     // Disegna i baffi (whiskers)
-
     // Linea del baffo inferiore
     boxplotGroup.append('line')
       .attr('x1', x)
       .attr('x2', x)
       .attr('y1', yScale(stat.min))
       .attr('y2', yScale(stat.q1))
-      .attr('stroke', 'white')
+      .attr('stroke', 'gold')
     // Linea del baffo superiore
     boxplotGroup.append('line')
       .attr('x1', x)
       .attr('x2', x)
       .attr('y1', yScale(stat.q3))
       .attr('y2', yScale(stat.max))
-      .attr('stroke', 'white')
+      .attr('stroke', 'gold')
 
     // Disegna gli outliers come punti
     stat.outliers.forEach(outlier => {
@@ -370,11 +374,11 @@ function drawComparativeChart(metrics) {
         .attr('cy', yScale(outlier))
         .attr('cx', x)
         .attr('r', 1)
-        .attr('fill', 'white')
+        .attr('fill', 'gold')
     })
 
     // Definisce un generatore di simboli
-    const symbolGenerator = d3.symbol().type(d3.symbolCross).size(32) // Scegli il tipo e la dimensione
+    const symbolGenerator = d3.symbol().type(d3.symbolCross).size(64) // Scegli il tipo e la dimensione
 
     // Appende un simbolo a un punto specifico del grafico
     boxplotGroup.append('path')
@@ -390,13 +394,18 @@ function drawScatterPlot(data) {
     console.log('No data to draw Parallel Coordinates Plot')
     return
   }
-
-  // Project the data in two dimensions
-  const projectedData = reduceData(data.map(d => dimensions.map(dim => d[dim])))
+  let projectedData = []
+  if (data[0].x === undefined || data[0].y === undefined) {
+    console.log('Projected Data not found, Wait for computation...')
+    // Project the data in two dimensions
+    projectedData = reduceData(data.map(d => dimensions.map(dim => d[dim])))
+  } else {
+    projectedData = data.map(d => [d.x, d.y])
+    console.log('Projected Data Retrieved from the dataset')
+  }
 
   // Remove the previous SVG
   d3.select("#scatter-plot").selectAll("svg").remove()
-
 
   // Margins for the visualizations
   const margin = { top: 15, right: 15, bottom: 15, left: 15 }
