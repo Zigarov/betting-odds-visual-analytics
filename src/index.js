@@ -447,14 +447,14 @@ function drawScatterPlot(data) {
 
   // Draw the points
 
-  const symbolGenerator = d3.symbol().size(32); // Dimensione del simbolo in pixel quadrati
+  const symbolGenerator = d3.symbol().size(16); // Dimensione del simbolo in pixel quadrati
 
   svg.selectAll(".point")
     .data(projectedData)
     .enter().append("path")
     .attr("class", "point")
     // .attr("d", (d, i) => symbolGenerator.type(isOver2(data[i]) ? d3.symbolCircle : d3.symbolTriangle)()) // Imposta il percorso del simbolo
-    .attr("d", d3.symbol().type(d3.symbolTriangle).size(32)) // Imposta il percorso del simbolo
+    .attr("d", symbolGenerator.type(d3.symbolTriangle)) // Imposta il percorso del simbolo
     // .attr("transform", d => `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)`) // Posiziona il simbolo
     .attr("transform", (d, i) => isOver2(data[i]) ? `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)` : `translate(${xScale(d[0])},${yScale(d[1])})`) // Posiziona il simbolo
     .style("fill", (d, i) => data[i].FTR === 'H' ? 'red' : data[i].FTR === 'D' ? 'white' : 'green') // Border Color
