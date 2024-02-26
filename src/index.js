@@ -231,7 +231,7 @@ function drawComparativeChart(metrics) {
   }
 
   // Set Margins for the visualization and get width and height of the visualization
-  const margin = { top: 10, right: 10, bottom: 30, left: 30 }
+  const margin = { top: 40, right: 10, bottom: 30, left: 30 }
   const height = visualization.node().clientHeight - margin.top - margin.bottom
   const width = visualization.node().clientWidth - margin.left - margin.right
 
@@ -260,7 +260,7 @@ function drawComparativeChart(metrics) {
 
   // Aggiungi l'asse X al gruppo degli assi
   axisGroup.append("g")
-    .attr("transform", `translate(${margin.left}, ${height})`)
+    .attr("transform", `translate(${margin.left}, ${height + margin.top})`)
     .call(d3.axisBottom(xScale))
 
   // Aggiungi l'asse Y al gruppo degli assi
@@ -274,6 +274,74 @@ function drawComparativeChart(metrics) {
     .attr('class', 'boxplots')
     .attr("transform", `translate(${margin.left}, ${margin.top})`)
 
+  // Crea un gruppo per la legenda
+  const legend = svg.append("g")
+    .attr("class", "boxplot-legend")
+  .attr("transform", `translate(${margin.left},0)`); // Centra verticalmente nella margin.top
+
+  // Linea continua per median, q1, q3
+  legend.append("line")
+    .attr("x1", 10)
+    .attr("x2", 26)
+    .attr("y1", 32)
+    .attr("y2", 32)
+    .style("stroke", "white")
+    .style("stroke-width", 2);
+
+  legend.append("text")
+    .attr("x", 32)
+    .attr("y", 34)
+    .style("fill", "white")
+    .text("median, q1, q3")
+    .style("font-size", "10px")
+
+  // Linea tratteggiata per mean, std
+  legend.append("line")
+    .attr("x1", 10)
+    .attr("x2", 26)
+    .attr("y1", 16)
+    .attr("y2", 16)
+    .style("stroke", "white")
+    .style("stroke-width", 2)
+    .style("stroke-dasharray", "5,5");
+
+  legend.append("text")
+    .attr("x", 32)
+    .attr("y", 18)
+    .style("fill", "white")
+    .style("font-size", "10px")
+    .text("mean, std");
+
+  // Cerchio per outliers
+  legend.append("circle")
+    .attr("cx", 150)
+    .attr("cy", 16)
+    .attr("r", 4)
+    .style("fill", "white");
+
+  legend.append("text")
+    .attr("x", 164)
+    .attr("y", 18)
+    .style("fill", "white")
+    .text("outliers")
+    .style("font-size", "10px")
+
+  const crossSymbol = d3.symbol().type(d3.symbolCross).size(32); // Puoi adattare la dimensione con 'size'
+
+  // Aggiungi la croce alla legenda
+  legend.append("path")
+    .attr("d", crossSymbol())
+    .attr("transform", `translate(${150}, ${32})`) // Posiziona la croce
+    .style("fill", "red"); // Imposta il colore della croce
+
+  // Aggiungi l'etichetta per la croce
+  legend.append("text")
+    .attr("x", 164)
+    .attr("y", 34) // Puoi regolare la posizione y per allineare il testo con il simbolo
+    .style("fill", "white")
+    .text("derived probability")
+    .style("font-size", "10px")
+    
   // Per ciascuna dimensione, disegna il boxplot
   dimensions.forEach(dim => {
     // Gain access to the stats for this dimension
@@ -282,6 +350,7 @@ function drawComparativeChart(metrics) {
     // Calcola la posizione Y del centro del boxplot per questa dimensione
     const dx = xScale.bandwidth() / 2
     const x = xScale(dim) + dx
+    // Assumi che `svg` sia il tuo elemento SVG principale
 
     // Disegna il rettangolo (quartili)
     boxplotGroup.append('rect')
@@ -290,10 +359,10 @@ function drawComparativeChart(metrics) {
       .attr('height', yScale(stat.q1) - yScale(stat.q3))
       .attr('width', dx * 2) // Altezza del boxplot (la metà della larghezza del padding tra i boxplot)
       .attr('fill', 'none')
-      .attr('stroke', 'gold')
+      .attr('stroke', 'white')
       .attr('stroke-width', 2)
       .attr('fill', 'none')
-      .attr('opacity', 0.8) // Rendi l'area leggermente trasparente
+      // .attr('opacity', 0.8) // Rendi l'area leggermente trasparente
       .on('mouseover', function (event) { 
         d3.select('.tooltip')
           .style('opacity', 1)
@@ -324,8 +393,8 @@ function drawComparativeChart(metrics) {
       .attr('x2', x + dx)
       .attr('y1', yScale(stat.median))
       .attr('y2', yScale(stat.median))
-      .attr('stroke', 'gold')
-      .attr('stroke-width', 2) // Rende la linea più spessa
+      .attr('stroke', 'white')
+      .attr('stroke-width', 4) // Rende la linea più spessa
 
 
     // Disegna la linea della media
@@ -334,9 +403,9 @@ function drawComparativeChart(metrics) {
       .attr('x2', x + dx / 2)
       .attr('y1', yScale(stat.mean))
       .attr('y2', yScale(stat.mean))
-      .attr('stroke', 'khaki') // Usa un colore diverso per distinguere la media
+      .attr('stroke', 'white') // Usa un colore diverso per distinguere la media
       .attr('stroke-dasharray', '2,2') // Rende la linea tratteggiata
-      .attr('stroke-width', 2) // Rende la linea più spessa
+      .attr('stroke-width', 4) // Rende la linea più spessa
 
     // Disegna l'area della deviazione standard come rettangolo ombreggiato
     const stdRangeMin = stat.mean - stat.std
@@ -346,10 +415,9 @@ function drawComparativeChart(metrics) {
       .attr('y', yScale(stdRangeMax))
       .attr('height', yScale(stdRangeMin) - yScale(stdRangeMax))
       .attr('width', dx)
-      .attr('stroke', 'khaki')
+      .attr('stroke', 'white')
       .attr('stroke-width', 2)
       .attr('fill', 'none')
-      .attr('fill', 'none') 
       .attr('stroke-dasharray', '2,2')
 
     // Disegna i baffi (whiskers)
@@ -359,22 +427,34 @@ function drawComparativeChart(metrics) {
       .attr('x2', x)
       .attr('y1', yScale(stat.min))
       .attr('y2', yScale(stat.q1))
-      .attr('stroke', 'gold')
+      .attr('stroke', 'white')
+    boxplotGroup.append('line')
+      .attr('x1', x - dx / 4)
+      .attr('x2', x + dx / 4) 
+      .attr('y1', yScale(stat.min))
+      .attr('y2', yScale(stat.min))
+      .attr('stroke', 'white')
     // Linea del baffo superiore
     boxplotGroup.append('line')
       .attr('x1', x)
       .attr('x2', x)
       .attr('y1', yScale(stat.q3))
       .attr('y2', yScale(stat.max))
-      .attr('stroke', 'gold')
+      .attr('stroke', 'white')
+    boxplotGroup.append('line')
+      .attr('x1', x - dx / 4)
+      .attr('x2', x + dx / 4)
+      .attr('y1', yScale(stat.max))
+      .attr('y2', yScale(stat.max))
+      .attr('stroke', 'white')
 
     // Disegna gli outliers come punti
     stat.outliers.forEach(outlier => {
       boxplotGroup.append('circle')
         .attr('cy', yScale(outlier))
         .attr('cx', x)
-        .attr('r', 1)
-        .attr('fill', 'gold')
+        .attr('r', 1.3)
+        .attr('fill', 'white')
     })
 
     // Definisce un generatore di simboli
@@ -447,16 +527,16 @@ function drawScatterPlot(data) {
 
   // Draw the points
 
-  const symbolGenerator = d3.symbol().size(16); // Dimensione del simbolo in pixel quadrati
+  const symbolGenerator = d3.symbol().size(24); // Dimensione del simbolo in pixel quadrati
 
   svg.selectAll(".point")
     .data(projectedData)
     .enter().append("path")
     .attr("class", "point")
-    // .attr("d", (d, i) => symbolGenerator.type(isOver2(data[i]) ? d3.symbolCircle : d3.symbolTriangle)()) // Imposta il percorso del simbolo
-    .attr("d", symbolGenerator.type(d3.symbolTriangle)) // Imposta il percorso del simbolo
-    // .attr("transform", d => `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)`) // Posiziona il simbolo
-    .attr("transform", (d, i) => isOver2(data[i]) ? `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)` : `translate(${xScale(d[0])},${yScale(d[1])})`) // Posiziona il simbolo
+    .attr("d", (d, i) => symbolGenerator.type(isOver2(data[i]) ? d3.symbolCircle : d3.symbolTriangle)()) // Imposta il percorso del simbolo
+    .attr("transform", d => `translate(${xScale(d[0])},${yScale(d[1])})`) // Posiziona il simbolo
+    // .attr("d", symbolGenerator.type(d3.symbolTriangle)) // Imposta il percorso del simbolo
+    // .attr("transform", (d, i) => isOver2(data[i]) ? `translate(${xScale(d[0])},${yScale(d[1])}) rotate(180)` : `translate(${xScale(d[0])},${yScale(d[1])})`) // Posiziona il simbolo
     .style("fill", (d, i) => data[i].FTR === 'H' ? 'red' : data[i].FTR === 'D' ? 'white' : 'green') // Border Color
     // .style("fill", "none") // Fill Color
     // .style("stroke-width", 1.5) // Border Width
@@ -469,6 +549,46 @@ function drawScatterPlot(data) {
   svg.append("g")
     .attr("class", "brush")
     .call(brushScatter);
+
+  // Definisci i dati per la legenda
+  const legendSymbols = [
+    { symbol: d3.symbolSquare, color: "red", label: "Home" },
+    { symbol: d3.symbolSquare, color: "white", label: "Draw" },
+    { symbol: d3.symbolSquare, color: "green", label: "Away" },
+    { symbol: d3.symbolCircle, color: "gray", label: "Over" },
+    { symbol: d3.symbolTriangle, color: "gray", label: "Under" }
+    // Aggiungi altri simboli/colori se necessario
+  ];
+
+  // Calcola la posizione della legenda
+  const legendX = width + margin.left - 80; // Adatta questo valore
+  const legendY = height + margin.top - 80; // Adatta questo valore
+
+  // Crea un gruppo per la legenda
+  const legend = svg.append("g")
+    .attr("class", "legend")
+    .attr("transform", `translate(${legendX},${legendY})`);
+
+  // Aggiungi i simboli alla legenda
+  legendSymbols.forEach((item, index) => {
+    const symbolGenerator = d3.symbol().type(item.symbol).size(64); // Dimensione del simbolo
+
+    // Aggiungi il simbolo
+    legend.append("path")
+      .attr("d", symbolGenerator())
+      .attr("transform", `translate(0, ${index * 20})`) // Spazia gli elementi verticalmente
+      .style("fill", item.color);
+
+    // Aggiungi l'etichetta
+    legend.append("text")
+      .attr("x", 10) // Distanza dal simbolo
+      .attr("y", index * 20)
+      .attr("dy", "0.32em") // Centra il testo rispetto al simbolo
+      .style("text-anchor", "start")
+      .text(item.label)
+      .style("fill", "white") // Colore del testo
+  });
+  
 
   function brushedScatter(event, data) {
     const filteredData = {}
