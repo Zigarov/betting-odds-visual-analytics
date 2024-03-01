@@ -53,6 +53,8 @@ export function drawComparativeChart (data, dimensions, containerId = '#comparat
 
   // Draw the Legend
   drawLegend(svg, margin)
+
+  return svg
 }
 
 function computeAnalytics (data, dimensions) {

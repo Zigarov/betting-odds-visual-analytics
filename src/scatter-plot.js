@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-
+import { Update, Init } from '.'
 export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDataIndex = {}) {
   const visualization = d3.select(containerId)
   // Remove the prevoius SVG
@@ -91,14 +91,52 @@ export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDa
       .style('font-size', '10px')
   })
   // Add the brush
+  const brushSel = {}
   const brush = d3.brush()
     .extent([[0, 0], [width, height]])
-    .on('brush', event => brushed(event, data, xScale, yScale, filteredDataIndex))
+    .on('brush', event => brushed(event, projectedData, xScale, yScale, brushSel))
+
   svg.append('g')
     .attr('class', 'brush')
     .call(brush)
+    .on('dblclick', event => dbclicked(event, brushSel))
+
+  return svg
 }
 
-function brushed (event, data, xScale, yScale, filteredDataIndex) {
-  console.log(event)
+function dbclicked(event, sel) {
+  const coords = d3.pointer(event)
+  // Check if the pointer is inside the brush selection
+  if (coords[0] >= sel.x0 && coords[0] <= sel.x1 && coords[1] >= sel.y0 && coords[1] <= sel.y1) {
+    // The pointer is inside the brush selection: focus on the selection
+    console.log('Inside')
+  } else {
+    // The pointer is outside the brush selection (or selection is undefined): reset the selection
+    Init()
+  }
+}
+
+function brushed (event, data, xScale, yScale, sel) {
+  const [[x0, y0], [x1, y1]] = event.selection // Get the selection
+  const selectedDataIndex = []
+  if (Math.abs(x0 - x1) < 2 || Math.abs(y0 - y1) < 2) { return}
+
+  data.forEach((d, i) => {
+    const x = xScale(d[0])
+    const y = yScale(d[1])
+    if (x0 <= x && x <= x1 && y0 <= y && y <= y1) {
+      selectedDataIndex.push(i)
+    }
+  })
+  Update(selectedDataIndex) // Update the visualizations
+  // Save the selection
+  sel.x0 = x0
+  sel.x1 = x1
+  sel.y0 = y0
+  sel.y1 = y1
+}
+
+export function highlightScatterPlot (selectedDataIndex) {
+  d3.selectAll('.point')
+    .style('stroke', (_, i) => selectedDataIndex.includes(i) ? 'gold' : 'none')
 }

@@ -69,6 +69,8 @@ export function drawParallelPlot (data, dimensions, containerId = '#parallel-plo
     .attr('stroke-opacity', 0.5)
     .attr('fill', 'none')
     .attr('stroke-width', 0.25)
+
+  return svg
 }
 
 function brushedY (event) {
@@ -79,4 +81,8 @@ function line (xScales, yScales, dimensions) {
   return d3.line()
     .x((d, i) => xScales(i))
     .y((d, i) => yScales[dimensions[i]](d))
+}
+
+export function highlightParallelPlot (selectedDataIndex = {}) {
+  d3.selectAll('path.line').classed('line-highlighted', (_, i) => selectedDataIndex.includes(i))
 }

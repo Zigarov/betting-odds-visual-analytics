@@ -3,14 +3,15 @@ import './index.scss'
 // import * as druid from '@saehrimnir/druidjs'
 // import * as d3 from 'd3'
 import dataset from '../dataset/odds23.csv' // Import the dataset
-import { drawParallelPlot } from './parallel-plot'  // Import the drawParallelPlot function
-import { drawScatterPlot } from './scatter-plot' // Import the drawScatterPlot function
+import { drawParallelPlot, highlightParallelPlot } from './parallel-plot'  // Import the drawParallelPlot function
+import { drawScatterPlot, highlightScatterPlot} from './scatter-plot' // Import the drawScatterPlot function
 import { drawComparativeChart } from './comparative-chart' // Import the drawComparativeChart function
 import { reduceData, csvDownload } from './preprocessing'
 
 const oddLabels = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']     // Define the odds labels
+let SVGs = {}
 
-function init(preprocessed=true, download=false){
+export function Init(preprocessed=true, download=false){
   if (dataset.length === 0 || dataset === undefined) {
     console.log('No data to draw the visualizations')
     return
@@ -41,11 +42,18 @@ function init(preprocessed=true, download=false){
   }
 
   // Draw the Parallel Plot
-  drawParallelPlot(dataset, oddLabels)
+  SVGs['#parallel-plot'] = drawParallelPlot(dataset, oddLabels)
   // Draw the Scatter Plot
-  drawScatterPlot(dataset)
+  SVGs['#scatter-plot'] = drawScatterPlot(dataset)
   // Draw the Comparative Chart
-  drawComparativeChart(dataset, oddLabels)
+  SVGs['#comparative-chart'] = drawComparativeChart(dataset, oddLabels)
 }
 
-init()
+Init()
+
+export function Update(selectedDataIndex = {}, filteredDataIndex = {}) {
+  highlightParallelPlot(selectedDataIndex)
+  highlightScatterPlot(selectedDataIndex)
+  const selectedData = dataset.filter((_, index) => selectedDataIndex.includes(index));
+  drawComparativeChart(selectedData, oddLabels)
+}
