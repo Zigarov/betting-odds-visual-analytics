@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 
 let parallelCoords = []
-let maxValues = {}
+const maxValues = {}
 let filteredRanges = {}
 
 export function drawParallelPlot (data, dimensions, containerId = '#parallel-plot', filteredDataIndex = {}) {
@@ -40,7 +40,7 @@ export function drawParallelPlot (data, dimensions, containerId = '#parallel-plo
   // Creat the brush for the vertical axes
   const brushY = d3.brushY()
     .extent([[-25, 0], [25, height]])
-    .on('brush', event => brushedY(event)) 
+    .on('brush', event => brushedY(event))
   // Create vertical axes
   svg.selectAll('.axis')
     .data(dimensions)
@@ -71,11 +71,11 @@ export function drawParallelPlot (data, dimensions, containerId = '#parallel-plo
     .attr('stroke-width', 0.25)
 }
 
-function brushedY(event) {
+function brushedY (event) {
   console.log(event)
 }
 
-function line(xScales, yScales, dimensions) {
+function line (xScales, yScales, dimensions) {
   return d3.line()
     .x((d, i) => xScales(i))
     .y((d, i) => yScales[dimensions[i]](d))
