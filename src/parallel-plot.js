@@ -3,8 +3,9 @@ import { Update } from './index.js'
 // let parallelCoords = []
 // const maxValues = {}
 // const selectedRanges = {}
+let filteredDataIndex // Array to store the filtered data index
 
-export function drawParallelPlot (data, dimensions, containerId = '#parallel-plot', filteredDataIndex = {}) {
+export function drawParallelPlot (data, dimensions, filteredIndex = [], containerId = '#parallel-plot') {
   const visualization = d3.select(containerId)
   // Remove the prevoius SVG
   visualization.selectAll('svg').remove()
@@ -13,6 +14,7 @@ export function drawParallelPlot (data, dimensions, containerId = '#parallel-plo
     console.log('No data to draw Parallel Coordinates Plot')
     return
   }
+  filteredDataIndex = filteredIndex
   // Transform the data in an Array of Arrays
   const parallelCoords = data.map(d => dimensions.map(dim => d[dim]))
   const selectedRanges = {}
@@ -78,12 +80,14 @@ function brushedY (event, dim, data, dimensions, yScales, selections) {
   const [y0, y1] = event.selection // y0 is the top, y1 is the bottom
   if (Math.abs(y0 - y1) < 2) { return }
   selections[dim] = [yScales[dim].invert(y1), yScales[dim].invert(y0)]
+
   const selectedDataIndex = []
   data.forEach((row, i) => {
     if (dimensions.every((d, j) => {
       return row[j] >= selections[d][0] && row[j] <= selections[d][1]
     })) {
-      selectedDataIndex.push(i)
+      const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
+      selectedDataIndex.push(idx)
     }
   })
   Update(selectedDataIndex)
@@ -96,5 +100,8 @@ function line (xScales, yScales, dimensions) {
 }
 
 export function highlightParallelPlot (selectedDataIndex = {}) {
-  d3.selectAll('path.line').classed('line-highlighted', (_, i) => selectedDataIndex.includes(i))
+  d3.selectAll('path.line').classed('line-highlighted', (_, i) => {
+    const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
+    return selectedDataIndex.includes(idx)
+  })
 }

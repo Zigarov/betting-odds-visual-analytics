@@ -1,5 +1,8 @@
 import * as d3 from 'd3'
-import { Update, Init } from '.'
+import { Init, Update, Focus } from './index'
+
+let selectedDataIndex
+
 export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDataIndex = {}) {
   const visualization = d3.select(containerId)
   // Remove the prevoius SVG
@@ -109,7 +112,7 @@ function dbclicked (event, sel) {
   // Check if the pointer is inside the brush selection
   if (coords[0] >= sel.x0 && coords[0] <= sel.x1 && coords[1] >= sel.y0 && coords[1] <= sel.y1) {
     // The pointer is inside the brush selection: focus on the selection
-    console.log('Inside')
+    Focus(selectedDataIndex)
   } else {
     // The pointer is outside the brush selection (or selection is undefined): reset the selection
     Init()
@@ -118,22 +121,24 @@ function dbclicked (event, sel) {
 
 function brushed (event, data, xScale, yScale, sel) {
   const [[x0, y0], [x1, y1]] = event.selection // Get the selection
-  const selectedDataIndex = []
+  const selectedIndex = []
   if (Math.abs(x0 - x1) < 2 || Math.abs(y0 - y1) < 2) { return }
 
   data.forEach((d, i) => {
     const x = xScale(d[0])
     const y = yScale(d[1])
     if (x0 <= x && x <= x1 && y0 <= y && y <= y1) {
-      selectedDataIndex.push(i)
+      selectedIndex.push(i)
     }
   })
-  Update(selectedDataIndex) // Update the visualizations
+  selectedDataIndex = selectedIndex
   // Save the selection
   sel.x0 = x0
   sel.x1 = x1
   sel.y0 = y0
   sel.y1 = y1
+  // Update the visualizations
+  Update(selectedDataIndex)
 }
 
 export function highlightScatterPlot (selectedDataIndex) {
