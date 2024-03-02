@@ -49,7 +49,6 @@ export function reduceData (data) {
  */
 export function csvDownload (filename, csvString) {
   // Create a Blob with the data in CSV format
-  const { Blob } = require('buffer')
   const blob = new Blob([csvString], { type: 'text/csv' })
   // Create an URL for the Blob
   const url = window.URL.createObjectURL(blob)
