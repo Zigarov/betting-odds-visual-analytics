@@ -1,5 +1,14 @@
 import * as d3 from 'd3'
 
+/**
+ * Draws a comparative chart based on the provided data and dimensions.
+ *
+ * @param {Array} data - The data used to draw the chart.
+ * @param {Array} dimensions - The dimensions used for the chart.
+ * @param {string} [containerId='#comparative-chart'] - The ID of the container element for the chart.
+ * @param {Object} [filteredDataIndex={}] - The index of filtered data.
+ * @returns {Object} - The SVG element representing the chart.
+ */
 export function drawComparativeChart (data, dimensions, containerId = '#comparative-chart', filteredDataIndex = {}) {
   // Remove the prevoius SVG
   const visualization = d3.select(containerId)
@@ -57,6 +66,13 @@ export function drawComparativeChart (data, dimensions, containerId = '#comparat
   return svg
 }
 
+/**
+ * Computes analytics for the given data and dimensions.
+ *
+ * @param {Array} data - The data to compute analytics on.
+ * @param {Array} dimensions - The dimensions to compute analytics for.
+ * @returns {Object} - The computed analytics for each dimension.
+ */
 function computeAnalytics (data, dimensions) {
   const analytics = {} // Dictionary to store the analytics for each dimension
   const results = ['H', 'D', 'A', 'Over', 'Under'] // Possibile outcomes, used to compute the frequencies for each dimension
@@ -91,6 +107,13 @@ function computeAnalytics (data, dimensions) {
   return analytics
 }
 
+/**
+ * Computes the frequencies of each result in the given data.
+ *
+ * @param {Array} data - The data to compute frequencies from.
+ * @param {Array} results - The possible results to compute frequencies for.
+ * @returns {Object} - An object containing the frequencies of each result.
+ */
 function computeFrequencies (data, results) {
   const step = 1 / data.length
   const frequencies = {}
@@ -107,6 +130,12 @@ function computeFrequencies (data, results) {
   return frequencies
 }
 
+/**
+ * Draws the legend for the chart.
+ *
+ * @param {object} svg - The SVG element to append the legend to.
+ * @param {object} margin - The margin object containing the top and left margins.
+ */
 function drawLegend (svg, margin) {
   // Add legend group to the SVG
   const legend = svg.append('g')
@@ -171,6 +200,16 @@ function drawLegend (svg, margin) {
     .style('font-size', '10px')
 }
 
+/**
+ * Draws boxplots on the SVG element.
+ *
+ * @param {Selection} svg - The SVG element to draw the boxplots on.
+ * @param {Object} analytics - The analytics data containing statistics for each dimension.
+ * @param {ScaleBand} xScale - The x-axis scale for positioning the boxplots.
+ * @param {ScaleLinear} yScale - The y-axis scale for positioning the boxplots.
+ * @param {Object} margin - The margin object containing top, right, bottom, and left margins.
+ * @param {Array} dimensions - The array of dimensions to draw boxplots for.
+ */
 function drawBoxplots (svg, analytics, xScale, yScale, margin, dimensions) {
   // Create a group for the boxplots
   const boxplotGroup = svg.selectAll('.boxplots')

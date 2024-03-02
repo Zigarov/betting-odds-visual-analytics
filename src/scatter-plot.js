@@ -1,8 +1,16 @@
 import * as d3 from 'd3'
 import { Init, Update, Focus } from './index'
 
-let selectedDataIndex
+let selectedDataIndex // Array to store the selected data index
 
+/**
+ * Draws a scatter plot visualization based on the provided data.
+ *
+ * @param {Array} data - The data to be visualized.
+ * @param {string} [containerId='#scatter-plot'] - The ID of the container element where the visualization will be rendered.
+ * @param {Object} [filteredDataIndex={}] - An object containing the indices of filtered data points.
+ * @returns {Object} - The SVG element representing the scatter plot visualization.
+ */
 export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDataIndex = {}) {
   const visualization = d3.select(containerId)
   // Remove the prevoius SVG
@@ -58,6 +66,7 @@ export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDa
     .attr('d', (d, i) => symbolGenerator.type(data[i].isOver === 'Over' ? d3.symbolCircle : d3.symbolTriangle)()) // Imposta il percorso del simbolo
     .attr('transform', d => `translate(${xScale(d[0])},${yScale(d[1])})`) // Posiziona il simbolo
     .style('fill', (d, i) => data[i].FTR === 'H' ? 'red' : data[i].FTR === 'D' ? 'white' : 'green') // Border Color
+
   // Draw the Legend
   const legendSymbols = [
     { symbol: d3.symbolSquare, color: 'red', label: 'Home' },
@@ -93,12 +102,12 @@ export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDa
       .style('fill', 'white')
       .style('font-size', '10px')
   })
-  // Add the brush
+  // Create the brush
   const brushSel = {}
   const brush = d3.brush()
     .extent([[0, 0], [width, height]])
     .on('brush', event => brushed(event, projectedData, xScale, yScale, brushSel))
-
+  // Add the brush to the SVG
   svg.append('g')
     .attr('class', 'brush')
     .call(brush)
@@ -107,6 +116,14 @@ export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDa
   return svg
 }
 
+/**
+ * Handles the double-click event on the scatter plot.
+ * If the pointer is inside the brush selection, it focuses on the selection.
+ * If the pointer is outside the brush selection or the selection is undefined, it resets the selection.
+ *
+ * @param {Event} event - The double-click event.
+ * @param {Object} sel - The brush selection object.
+ */
 function dbclicked (event, sel) {
   const coords = d3.pointer(event)
   // Check if the pointer is inside the brush selection
@@ -119,6 +136,15 @@ function dbclicked (event, sel) {
   }
 }
 
+/**
+ * Handles the brushed event on the scatter plot.
+ *
+ * @param {Event} event - The brushed event object.
+ * @param {Array} data - The data array.
+ * @param {Function} xScale - The x-axis scale function.
+ * @param {Function} yScale - The y-axis scale function.
+ * @param {Object} sel - The selection object.
+ */
 function brushed (event, data, xScale, yScale, sel) {
   const [[x0, y0], [x1, y1]] = event.selection // Get the selection
   const selectedIndex = []

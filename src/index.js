@@ -1,7 +1,4 @@
-// index.js
 import './index.scss'
-// import * as druid from '@saehrimnir/druidjs'
-// import * as d3 from 'd3'
 import dataset from '../dataset/odds23.csv' // Import the dataset
 import { drawParallelPlot, highlightParallelPlot } from './parallel-plot' // Import the drawParallelPlot function
 import { drawScatterPlot, highlightScatterPlot } from './scatter-plot' // Import the drawScatterPlot function
@@ -12,6 +9,12 @@ const oddLabels = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU'] // Define the odds la
 const SVGs = {} // Object to store the SVGs of the visualizations
 Init()
 
+/**
+ * Initializes the visualizations.
+ *
+ * @param {boolean} [preprocessed=true] - Indicates whether the data is preprocessed.
+ * @param {boolean} [download=false] - Indicates whether to download the data as a CSV file.
+ */
 export function Init (preprocessed = true, download = false) {
   if (dataset.length === 0 || dataset === undefined) {
     console.log('No data to draw the visualizations')
@@ -48,16 +51,20 @@ export function Init (preprocessed = true, download = false) {
   SVGs['#comparative-chart'] = drawComparativeChart(dataset, oddLabels)
 }
 
-export function Update (selectedDataIndex = {}, filteredDataIndex = {}) {
+/**
+ * Updates the visualizations based on the selected data index and filtered data index.
+ *
+ * @param {number[]} selectedDataIndex - The array of selected data indices.
+ * @param {number[]} filteredDataIndex - The array of filtered data indices.
+ */
+export function Update (selectedDataIndex = [], filteredDataIndex = []) {
   highlightParallelPlot(selectedDataIndex)
   highlightScatterPlot(selectedDataIndex)
   const selectedData = dataset.filter((_, index) => selectedDataIndex.includes(index))
   drawComparativeChart(selectedData, oddLabels)
 }
 
-export function Focus (selectedDataIndex = {}) {
+export function Focus (selectedDataIndex = []) {
   const selectedData = dataset.filter((_, index) => selectedDataIndex.includes(index))
-  console.log(selectedData)
-  console.log(selectedDataIndex)
   drawParallelPlot(selectedData, oddLabels, selectedDataIndex)
 }
