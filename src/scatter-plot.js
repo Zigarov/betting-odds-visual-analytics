@@ -104,7 +104,7 @@ export function drawScatterPlot (data, containerId = '#scatter-plot', filteredDa
   return svg
 }
 
-function dbclicked(event, sel) {
+function dbclicked (event, sel) {
   const coords = d3.pointer(event)
   // Check if the pointer is inside the brush selection
   if (coords[0] >= sel.x0 && coords[0] <= sel.x1 && coords[1] >= sel.y0 && coords[1] <= sel.y1) {
@@ -119,7 +119,7 @@ function dbclicked(event, sel) {
 function brushed (event, data, xScale, yScale, sel) {
   const [[x0, y0], [x1, y1]] = event.selection // Get the selection
   const selectedDataIndex = []
-  if (Math.abs(x0 - x1) < 2 || Math.abs(y0 - y1) < 2) { return}
+  if (Math.abs(x0 - x1) < 2 || Math.abs(y0 - y1) < 2) { return }
 
   data.forEach((d, i) => {
     const x = xScale(d[0])
