@@ -4,20 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:image/x-icon;base64,AA">
-    <link rel="stylesheet" type="text/css" href="index.css">
-    <script src="d3.v7.8.5.min.js"></script>
-    <script src="druid.js"></script>
-    <title>Odds Analytics</title>
+
+    <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
 
   <body>
     <div id="visualization-container">
-      <div id="parallel-chart"></div>
+      <div id="parallel-plot"></div>
+      <div id="scatter-plot"></div>
       <div id="comparative-chart"></div>
-      <div id="scatter-plot"></divid></div>
     </div>
     <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
-    <script src="index.js"></script>
-    <!-- <script src="preprocessing.js"></script> -->
   </body>
+
 </html>

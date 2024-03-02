@@ -1,82 +1,64 @@
-// Path to the CSV file
-const csvFilePath = '../dataset/odds23.csv'
+import * as d3 from 'd3'
+import * as druid from '@saehrimnir/druidjs'
 
-// const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
-const dimensions = ['AvgH', 'AvgD', 'AvgA', 'AvgO', 'AvgU']
-const oddsLabels = ['1', 'X', '2', 'Over', 'Under']
-
-// Load the dataset
-d3.csv(csvFilePath, d3.autotype).then(data => {
-    // Project the data into 2D space using MDS
-    const projectedData = reduceData(data.map(d => dimensions.map(dim => d[dim])))
-
-    // data = data.map((d, i) => {
-    //     d.Over = d.Over === 1 ? 'Over' : 'Under'
-    //     d.FTR = d.FTR === 1 ? 'H' : d.FTR === 0 ? 'D' : 'A'
-    //     d.x = reducedData[i][0]
-    //     d.y = reducedData[i][1]
-    //     return d
-    // })
-
-    // Creare l'intestazione del CSV dalle chiavi del primo oggetto (supponendo uniformità)
-    let csvString = Object.keys(data[0]).join(',') + ',x,y\n';
-
-    // Aggiungere ogni riga di dati
-    data.forEach((row,i) => {
-        // csvString += Object.values(row).join(',') + '\n';
-        // const over = (Number(row.HG) + Number(row.AG)) > 2.5 ? 'Over' : 'Under'
-        csvString += Object.values(row).join(',') + ',' +  projectedData[i][0] + ',' + projectedData[i][1] + '\n';
-    });
-
-    // download the csv file
-    download('odds23.csv', csvString);
-
-
-}).catch(error => {
-    console.error("Errore nel caricamento del dataset:", error);
-});
-
-
-function reduceData(data) {
-    const normalizedData = normalizeData(data)
-    //let distanceMatrix = druid.distance_matrix(druid.Matrix.from(data))
-    let reducedData = new druid.MDS(druid.Matrix.from(normalizedData)).transform()
-    return reducedData.to2dArray
+/**
+ * Computes the 'isOver' property for each row in the given data array.
+ * The 'isOver' property indicates whether the sum of 'HG' and 'AG' is greater than 2.5.
+ *
+ * @param {Array} data - The data array containing rows to compute 'isOver' property for.
+ * @returns {Array} - The updated data array with 'isOver' property added to each row.
+ */
+export function computeOverColumn (data) {
+  return data.map(row => {
+    row.isOver = row.HG + row.AG > 2.5 ? 'Over' : 'Under'
+    return row
+  })
 }
 
-function normalizeData(data) {
-    // Calcola la media e la deviazione standard per ogni colonna
-    let means = data[0].map((_, i) => d3.mean(data, row => row[i]));
-    let stdDevs = data[0].map((_, i) => d3.deviation(data, row => row[i]));
-
-    // Applica la normalizzazione Z-score
-    let normalizedData = data.map(row =>
-        row.map((value, i) => (value - means[i]) / stdDevs[i])
-    )
-    return normalizedData
+/**
+ * Normalizes the given data using Z-score normalization.
+ *
+ * @param {Array<Array<number>>} data - The data to be normalized.
+ * @returns {Array<Array<number>>} The normalized data.
+ */
+export function normalizeData (data) {
+  // compute mean and standard deviation for each column
+  const means = data[0].map((_, i) => d3.mean(data, row => row[i]))
+  const stdDevs = data[0].map((_, i) => d3.deviation(data, row => row[i]))
+  // Apply Z-score normalization
+  return data.map(row => row.map((value, i) => (value - means[i]) / stdDevs[i]))
 }
 
-function download(filename, csvString) {
-    // Crea un Blob con i dati in formato CSV
-    let blob = new Blob([csvString], { type: 'text/csv' });
+/**
+ * Reduces the dimensionality of the given data using Multi-Dimensional Scaling (MDS).
+ *
+ * @param {Array<Array<number>>} data - The data to be reduced.
+ * @returns {Array<Array<number>>} The reduced data.
+ */
+export function reduceData (data) {
+  const normalizedData = normalizeData(data)
+  const reducedData = new druid.MDS(druid.Matrix.from(normalizedData)).transform()
+  return reducedData.to2dArray
+}
 
-    // Crea un URL per il Blob
-    let url = URL.createObjectURL(blob);
-
-    // Crea un elemento link per il download
-    let a = document.createElement('a');
-    a.href = url;
-    a.download = filename; // Nome del file da scaricare
-
-    // Aggiungi il link al documento (non è necessario che sia visibile)
-    document.body.appendChild(a);
-
-    // Simula un click sull'elemento link per avviare il download
-    a.click();
-
-    // Rimuovi l'elemento link dopo l'avvio del download
-    document.body.removeChild(a);
-
-    // Rilascia l'URL del Blob per liberare risorse
-    URL.revokeObjectURL(url);
+/**
+ * Downloads a CSV file with the given filename and content.
+ *
+ * @param {string} filename - The name of the CSV file.
+ * @param {string} csvString - The content of the CSV file.
+ */
+export function csvDownload (filename, csvString) {
+  // Create a Blob with the data in CSV format
+  const { Blob } = require('buffer')
+  const blob = new Blob([csvString], { type: 'text/csv' })
+  // Create an URL for the Blob
+  const url = window.URL.createObjectURL(blob)
+  // Create a link element for the download
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  // Trigger the download
+  a.click()
+  // Revoke the URL to free memory
+  window.URL.revokeObjectURL(url)
 }
