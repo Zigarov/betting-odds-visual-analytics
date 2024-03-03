@@ -83,8 +83,15 @@ export function drawParallelPlot (data, dimensions, filteredIndex = [], containe
           Focus(selectedDataIndex)
         } else {
           // Reset the selection
-          console.log('Reset the selection', d)
-          brushedY([0, 0], d, parallelCoords, dimensions, yScales, brushSelections)
+          brushSelections[d] = [0, 0]
+          // If no selection is available, reset the visualization
+          if (Object.values(brushSelections).every(s => s[0] === 0 && s[1] === 0)) {
+            console.log('No selections available')
+            Init()
+          } else {
+            console.log('Reset the selection', d)
+            brushedY([0, 0], d, parallelCoords, dimensions, yScales, brushSelections)
+          }
         }
       })
     })
@@ -115,20 +122,10 @@ export function drawParallelPlot (data, dimensions, filteredIndex = [], containe
  */
 function brushedY (selection, dim, data, dimensions, yScales, selections) {
   // Check if the selection is empty
-  if (Math.abs(selection[0] - selection[1]) < 2) {
-    // Reset the selection
-    console.log('Reset the selection', dim)
-    selections[dim] = [0, 0] // Reset the selection of the dimension
-  } else {
-    // update the selection for dimension dim
+  if (Math.abs(selection[0] - selection[1]) > 2) {
     selections[dim] = [yScales[dim].invert(selection[1]), yScales[dim].invert(selection[0])]
   }
-  // If no selection is available, reset the visualization
-  if (Object.values(selections).every(s => s[0] === 0 && s[1] === 0)) {
-    console.log('No selections available')
-    Init()
-    return
-  }
+  // Select the data based on the selection
   const selectedIndex = [] // Array to store the selected data index
   data.forEach((row, i) => {
     if (dimensions.every((d, j) => {
@@ -137,6 +134,7 @@ function brushedY (selection, dim, data, dimensions, yScales, selections) {
     })) {
       // Add the index of the row to the selected index
       const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
+      // console.log('Selected', idx, i)
       selectedIndex.push(idx)
     }
   })
