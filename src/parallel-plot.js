@@ -52,7 +52,6 @@ export function drawParallelPlot (data, dimensions, filteredIndex = [], containe
     yScales[dim] = d3.scaleLinear().range([height, 0]).domain(selectedRanges[dim])
     brushSelections[dim] = [0, 0]
   })
-  console.log(brushSelections)
   // Create vertical axes
   svg.selectAll('.axis')
     .data(dimensions)
@@ -164,6 +163,8 @@ function line (xScales, yScales, dimensions) {
  */
 export function highlightParallelPlot (selectedIndex = [-1]) {
   console.log(selectedIndex)
+  console.log('filteredDataIndex', filteredDataIndex)
+  console.log('length', filteredDataIndex.length)
   d3.selectAll('path.line').classed('line-highlighted', (_, i) => {
     const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
     return selectedDataIndex.includes(idx)
