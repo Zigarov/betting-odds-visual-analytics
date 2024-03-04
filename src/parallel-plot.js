@@ -166,6 +166,6 @@ export function highlightParallelPlot (selectedIndex = [-1]) {
   console.log(selectedIndex)
   d3.selectAll('path.line').classed('line-highlighted', (_, i) => {
     const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
-    return selectedDataIndex.includes(idx)
+    return selectedIndex.includes(idx)
   })
 }
