@@ -76,7 +76,6 @@ export function drawParallelPlot (data, dimensions, filteredIndex = [], containe
       d3.select(this).on('dblclick', (event, d) => {
         const coords = d3.pointer(event)
         const y = yScales[d].invert(coords[1])
-        console.log(y, brushSelections[d][0], brushSelections[d][1])
         if (brushSelections[d][0] <= y && brushSelections[d][1] >= y) {
           console.log('Focus on', d, y)
           Focus(selectedDataIndex)
@@ -133,7 +132,6 @@ function brushedY (selection, dim, data, dimensions, yScales, selections) {
     })) {
       // Add the index of the row to the selected index
       const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
-      // console.log('Selected', idx, i)
       selectedIndex.push(idx)
     }
   })
@@ -159,12 +157,9 @@ function line (xScales, yScales, dimensions) {
 /**
  * Highlights the paths in a parallel plot based on the selected index.
  *
- * @param {number[]} [selectedIndex=[-1]] - The array of selected indices.
+ * @param {number[]} [selectedIndex=[]] - The array of selected indices.
  */
-export function highlightParallelPlot (selectedIndex = [-1]) {
-  console.log(selectedIndex)
-  console.log('filteredDataIndex', filteredDataIndex)
-  console.log('length', filteredDataIndex.length)
+export function highlightParallelPlot (selectedIndex = []) {
   d3.selectAll('path.line').classed('line-highlighted', (_, i) => {
     const idx = filteredDataIndex.length > 0 ? filteredDataIndex[i] : i
     return selectedIndex.includes(idx)

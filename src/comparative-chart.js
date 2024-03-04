@@ -236,7 +236,7 @@ function drawBoxplots (svg, analytics, xScale, yScale, margin, dimensions) {
       .attr('fill', 'none')
       .attr('stroke', 'white')
       .attr('stroke-width', 2)
-      .attr('fill', 'none')
+      .attr('fill', '#252525')
       .on('mouseover', function (event) {
         // Show the tooltip on mouseover
         d3.select('.tooltip')
